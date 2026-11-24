@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- OPGI brand palette -->
+  <Color x:Key="EmeraldColor">#0F6B5C</Color>
+  <Color x:Key="EmeraldDeepColor">#0A4E43</Color>
+  <Color x:Key="OchreColor">#B4761F</Color>
+  <Color x:Key="SandColor">#F6F5F1</Color>
+  <Color x:Key="SurfaceColor">#FFFFFF</Color>
+  <Color x:Key="SurfaceAltColor">#EFF3F0</Color>
+  <Color x:Key="InkColor">#17231F</Color>
+  <Color x:Key="MutedColor">#6C7B75</Color>
+  <Color x:Key="LineColor">#DCE5E1</Color>
+  <Color x:Key="SuccessColor">#1E9E6A</Color>
+  <Color x:Key="WarningColor">#D08A1B</Color>
+  <Color x:Key="ErrorColor">#C0392B</Color>
+  <Color x:Key="InfoColor">#2F6FB0</Color>
+
+  <SolidColorBrush x:Key="EmeraldBrush" Color="{DynamicResource EmeraldColor}" />
+  <SolidColorBrush x:Key="EmeraldDeepBrush" Color="{DynamicResource EmeraldDeepColor}" />
+  <SolidColorBrush x:Key="OchreBrush" Color="{DynamicResource OchreColor}" />
+  <SolidColorBrush x:Key="SandBrush" Color="{DynamicResource SandColor}" />
+  <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
+  <SolidColorBrush x:Key="SurfaceAltBrush" Color="{DynamicResource SurfaceAltColor}" />
+  <SolidColorBrush x:Key="InkBrush" Color="{DynamicResource InkColor}" />
+  <SolidColorBrush x:Key="MutedBrush" Color="{DynamicResource MutedColor}" />
+  <SolidColorBrush x:Key="LineBrush" Color="{DynamicResource LineColor}" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
+  <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}" />
+  <SolidColorBrush x:Key="ErrorBrush" Color="{DynamicResource ErrorColor}" />
+  <SolidColorBrush x:Key="InfoBrush" Color="{DynamicResource InfoColor}" />
+
+  <x:Double x:Key="Space2">4</x:Double>
+  <x:Double x:Key="Space3">8</x:Double>
+  <x:Double x:Key="Space4">12</x:Double>
+  <x:Double x:Key="Space5">18</x:Double>
+  <x:Double x:Key="Space6">24</x:Double>
+  <CornerRadius x:Key="RadiusCard">14</CornerRadius>
+  <CornerRadius x:Key="RadiusSmall">8</CornerRadius>
+</ResourceDictionary>

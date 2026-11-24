@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusPlus.Desktop.Views.SettingsView">
+  <ScrollViewer>
+    <StackPanel Spacing="14">
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock x:Name="GeneralTitle" Classes="section-title" />
+          <Grid ColumnDefinitions="*,*,*">
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+              <TextBlock x:Name="CompanyLabel" Classes="kpi-label" />
+              <TextBlock Text="{Binding BrandCompany}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="8,0,8,0">
+              <TextBlock x:Name="ProductLabel" Classes="kpi-label" />
+              <TextBlock Text="{Binding BrandProduct}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="8,0,0,0">
+              <TextBlock x:Name="DbLabel" Classes="kpi-label" />
+              <TextBlock Text="{Binding LatestBackupText}" Classes="subtle" />
+            </StackPanel>
+          </Grid>
+          <WrapPanel>
+            <Button x:Name="ArabicButton" Classes="ghost" Command="{Binding SelectArabicCommand}" Margin="0,8,8,0" />
+            <Button x:Name="FrenchButton" Classes="ghost" Command="{Binding SelectFrenchCommand}" Margin="0,8,8,0" />
+            <Button x:Name="ThemeButton" Classes="ghost" Command="{Binding ToggleThemeCommand}" Margin="0,8,8,0" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <Grid ColumnDefinitions="*,*">
+        <Border Grid.Column="0" Classes="card" Margin="0,0,8,0">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+              <TextBlock x:Name="ShiftsTitle" Classes="section-title" />
+              <Button x:Name="NewRuleButton" Classes="ghost" Command="{Binding NewRuleCommand}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Rules}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="soft" Margin="0,0,0,6">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding TimesText}" Classes="subtle" />
+                      <TextBlock Text="{Binding TargetText}" Classes="subtle" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="card" Margin="8,0,0,0">
+          <DockPanel>
+            <TextBlock x:Name="ServicesTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+            <ItemsControl ItemsSource="{Binding Departments}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,7">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Text="{Binding EmployeesText}" Classes="subtle" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <Grid ColumnDefinitions="*,*">
+        <Border Grid.Column="0" Classes="card" Margin="0,0,8,0">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+              <TextBlock x:Name="BackupTitle" Classes="section-title" />
+              <Button x:Name="BackupButton" Classes="primary" Command="{Binding BackupNowCommand}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Backups}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="soft" Margin="0,0,0,6">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Text="{Binding CreatedText}" Classes="subtle" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="card" Margin="8,0,0,0">
+          <DockPanel>
+            <TextBlock x:Name="OperatorsTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+            <ItemsControl ItemsSource="{Binding Operators}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,7">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="{Binding DisplayName}" />
+                      <TextBlock Grid.Column="1" Text="{Binding RoleText}" Classes="subtle" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

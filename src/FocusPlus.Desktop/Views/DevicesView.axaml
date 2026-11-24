@@ -1,0 +1,122 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusPlus.Desktop.Views.DevicesView">
+  <Grid>
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+      <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="3">
+            <TextBlock x:Name="HeaderText" Classes="section-title" />
+            <TextBlock Text="{Binding SdkStatus}" Classes="subtle" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button x:Name="ScanButton" Classes="primary" Command="{Binding ScanCommand}" />
+            <Button x:Name="RefreshButton" Classes="ghost" Command="{Binding RefreshCommand}" />
+            <Button x:Name="AddButton" Classes="ghost" Command="{Binding AddByIpCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <TextBlock Grid.Row="1" Text="{Binding StatusMessage}" Classes="subtle" Margin="4,0,0,10" />
+
+      <Grid Grid.Row="2" ColumnDefinitions="*,360">
+        <Border Grid.Column="0" Classes="card" Margin="0,0,10,0">
+          <DockPanel>
+            <TextBlock x:Name="ListTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+            <ListBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
+                     Background="Transparent" BorderThickness="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Padding="10,8" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Endpoint}" Classes="subtle" />
+                        <TextBlock Text="{Binding Serial}" Classes="subtle" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding StatusText}" />
+                        <TextBlock Text="{Binding Firmware}" Classes="subtle" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="card" Margin="10,0,0,0">
+          <DockPanel>
+            <TextBlock x:Name="ScanTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,6" />
+            <TextBlock Text="{Binding ScanFound}" Classes="subtle" DockPanel.Dock="Top" Margin="0,0,0,8" />
+            <ItemsControl ItemsSource="{Binding ScanResults}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="soft" Margin="0,0,0,6">
+                    <Grid RowDefinitions="Auto,Auto,Auto">
+                      <TextBlock Text="{Binding IpAddress}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Row="1" Text="{Binding HandshakeText}" Classes="subtle" />
+                      <Button Grid.Row="2" x:Name="AddFound" Classes="ghost" Margin="0,6,0,0"
+                              Content="+" Command="{Binding $parent[ItemsControl].DataContext.AddDiscoveredCommand}"
+                              CommandParameter="{Binding}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <TextBlock Grid.Row="3" Text="{Binding NetworkLog}" Classes="subtle" MaxHeight="60" TextWrapping="Wrap" Margin="4,8,0,0" />
+    </Grid>
+
+    <!-- In-page drawer -->
+    <Border Classes="card" IsVisible="{Binding IsDrawerOpen}" Width="460"
+            HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,0,0,0"
+            Background="{DynamicResource SurfaceBrush}" ZIndex="10">
+      <ScrollViewer>
+        <StackPanel Spacing="12" DataContext="{Binding}">
+          <TextBlock Text="{Binding DrawerTitle}" Classes="section-title" />
+          <TextBlock Text="{Binding SelectedDeviceSubtitle}" Classes="subtle" />
+
+          <TextBlock x:Name="NameLabel" Classes="kpi-label" />
+          <TextBox Text="{Binding EditName}" />
+          <TextBlock x:Name="IpLabel" Classes="kpi-label" />
+          <TextBox Text="{Binding EditIp}" />
+          <Grid ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+              <TextBlock x:Name="PortLabel" Classes="kpi-label" />
+              <TextBox Text="{Binding EditPort}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+              <TextBlock x:Name="KeyLabel" Classes="kpi-label" />
+              <TextBox Text="{Binding EditCommKey}" />
+            </StackPanel>
+          </Grid>
+          <TextBlock x:Name="MaskLabel" Classes="kpi-label" />
+          <TextBox Text="{Binding EditMask}" />
+          <TextBlock x:Name="GatewayLabel" Classes="kpi-label" />
+          <TextBox Text="{Binding EditGateway}" />
+          <TextBlock x:Name="NoteLabel" Classes="kpi-label" />
+          <TextBox Text="{Binding EditNote}" AcceptsReturn="True" Height="70" />
+
+          <TextBlock Text="{Binding InfoDump}" Classes="subtle" TextWrapping="Wrap"
+                     IsVisible="{Binding HasInfoDump}" MaxHeight="160" />
+
+          <WrapPanel Orientation="Horizontal">
+            <Button x:Name="SaveButton" Classes="primary" Command="{Binding SaveDeviceCommand}" />
+            <Button x:Name="PullButton" Classes="ghost" Command="{Binding PullSelectedCommand}" />
+            <Button x:Name="SyncButton" Classes="ghost" Command="{Binding SyncSelectedCommand}" />
+            <Button x:Name="RebootButton" Classes="ghost" Command="{Binding RebootCommand}" />
+            <Button x:Name="UsersButton" Classes="ghost" Command="{Binding ReadUsersCommand}" />
+            <Button x:Name="DumpButton" Classes="ghost" Command="{Binding DumpInfoCommand}" />
+            <Button x:Name="CloseButton" Classes="ghost" Command="{Binding CloseDrawerCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

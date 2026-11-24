@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/FocusPlus.Application/FocusPlus.Application.csproj" />
     <Project Path="src/FocusPlus.Data/FocusPlus.Data.csproj" />
+    <Project Path="src/FocusPlus.Desktop/FocusPlus.Desktop.csproj" />
     <Project Path="src/FocusPlus.Domain/FocusPlus.Domain.csproj" />
     <Project Path="src/FocusPlus.Hardware/FocusPlus.Hardware.csproj" />
   </Folder>

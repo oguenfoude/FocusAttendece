@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusPlus.Desktop.Views.LoginView">
+  <Grid ColumnDefinitions="1.05*,1.35*">
+
+    <!-- Branded panel -->
+    <Border Grid.Column="0" Background="{DynamicResource EmeraldBrush}" Padding="44">
+      <StackPanel VerticalAlignment="Center" Spacing="18">
+        <Border Width="54" Height="54" CornerRadius="14"
+                Background="#22FFFFFF" HorizontalAlignment="Left">
+          <TextBlock Text="FP" Foreground="White" FontSize="22" FontWeight="Bold"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock x:Name="BrandTitle" Text="FocusPlus" Foreground="White"
+                   FontSize="34" FontWeight="SemiBold" />
+        <TextBlock x:Name="BrandSub" Foreground="#D7EBE5" FontSize="15" TextWrapping="Wrap" />
+        <Border Height="1" Background="#55FFFFFF" Margin="0,10,0,0" />
+        <TextBlock x:Name="BrandMission" Foreground="#C8E2DA" FontSize="13" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <!-- Login card -->
+    <Grid Grid.Column="1" Background="{DynamicResource SandBrush}">
+      <Border Classes="card" Width="420" VerticalAlignment="Center"
+              HorizontalAlignment="Center" Padding="32">
+        <StackPanel Spacing="16">
+          <TextBlock x:Name="WelcomeText" Classes="page-title" Text="تسجيل الدخول" />
+          <TextBlock x:Name="WelcomeSub" Classes="subtle" />
+
+          <StackPanel Spacing="6">
+            <TextBlock x:Name="UserLabel" Classes="kpi-label" />
+            <TextBox x:Name="UserBox" Height="42" Watermark="admin"
+                     Text="{Binding Username}" />
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock x:Name="PassLabel" Classes="kpi-label" />
+            <TextBox x:Name="PassBox" Height="42" PasswordChar="•"
+                     Text="{Binding Password}" />
+          </StackPanel>
+
+          <TextBlock x:Name="ErrorText" Foreground="{DynamicResource ErrorBrush}"
+                     Text="{Binding ErrorText}" TextWrapping="Wrap" MinHeight="18" />
+
+          <Button x:Name="SignInButton" Classes="primary" Height="44"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                  Command="{Binding LoginCommand}">
+            <TextBlock x:Name="SignInText" Text="دخول" Foreground="White" FontWeight="SemiBold" />
+          </Button>
+
+          <Grid ColumnDefinitions="*,*">
+            <Button x:Name="LangButton" Classes="ghost" Grid.Column="0" Margin="0,0,6,0"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Command="{Binding ToggleLanguageCommand}">
+              <TextBlock x:Name="LangText" />
+            </Button>
+            <Button x:Name="ThemeButton" Classes="ghost" Grid.Column="1" Margin="6,0,0,0"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Command="{Binding ToggleThemeCommand}">
+              <TextBlock x:Name="ThemeText" />
+            </Button>
+          </Grid>
+
+          <Border Classes="soft" Margin="0,8,0,0">
+            <TextBlock x:Name="DbStatus" Classes="subtle" Text="{Binding DatabaseStatus}" />
+          </Border>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

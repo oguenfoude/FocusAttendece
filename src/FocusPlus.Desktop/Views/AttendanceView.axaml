@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusPlus.Desktop.Views.AttendanceView">
+  <Grid>
+    <Grid RowDefinitions="Auto,Auto,*">
+
+      <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Button x:Name="TodayButton" Classes="ghost" Command="{Binding TodayCommand}" />
+            <Button x:Name="WeekButton" Classes="ghost" Command="{Binding WeekCommand}" />
+            <Button x:Name="MonthButton" Classes="ghost" Command="{Binding MonthCommand}" />
+            <TextBlock Text="{Binding SummaryText}" Classes="subtle" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button Grid.Column="1" x:Name="RefreshButton" Classes="primary" Command="{Binding RefreshCommand}" />
+        </Grid>
+      </Border>
+
+      <TextBlock Grid.Row="1" Text="{Binding SummaryText}" Classes="subtle" Margin="4,0,0,10" />
+
+      <Border Grid.Row="2" Classes="card">
+        <ListBox ItemsSource="{Binding Rows}" Background="Transparent" BorderThickness="0">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="1.7*,1*,1*,1*,1*,Auto" Margin="0,7">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding DateText}" Classes="subtle" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding DayText}" Classes="subtle" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding TotalText}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding ExtraText}" Classes="subtle" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="{Binding StatusText}" VerticalAlignment="Center" Margin="8,0" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
+    </Grid>
+
+    <Border Classes="card" IsVisible="{Binding IsDetailOpen}" Width="520"
+            HorizontalAlignment="Right" VerticalAlignment="Stretch" ZIndex="10">
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <TextBlock Text="{Binding DetailTitle}" Classes="section-title" />
+          <TextBlock Text="{Binding DetailSubtitle}" Classes="subtle" />
+          <Border Classes="soft">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{Binding DetailTimes}" />
+              <TextBlock Text="{Binding DetailTotals}" />
+              <TextBlock Text="{Binding DetailStatus}" />
+              <TextBlock Text="{Binding DetailNotes}" Classes="subtle" />
+            </StackPanel>
+          </Border>
+
+          <TextBlock x:Name="PunchesLabel" Classes="kpi-label" />
+          <ItemsControl ItemsSource="{Binding DetailPunches}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,*,*" Margin="0,4">
+                  <TextBlock Text="{Binding Time}" />
+                  <TextBlock Grid.Column="1" Text="{Binding State}" Classes="subtle" />
+                  <TextBlock Grid.Column="2" Text="{Binding Source}" Classes="subtle" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock x:Name="ManualLabel" Classes="kpi-label" Margin="0,8,0,0" />
+          <TextBox Text="{Binding ManualTime}" Watermark="HH:mm" />
+          <TextBox Text="{Binding ManualNote}" />
+          <Button x:Name="AddManualButton" Classes="primary" Command="{Binding AddManualPunchCommand}" />
+
+          <Button x:Name="CloseButton" Classes="ghost" Command="{Binding CloseDetailCommand}" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

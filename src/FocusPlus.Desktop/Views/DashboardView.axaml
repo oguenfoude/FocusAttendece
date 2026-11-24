@@ -1,0 +1,114 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusPlus.Desktop.Views.DashboardView">
+  <ScrollViewer>
+    <StackPanel Spacing="18">
+
+      <!-- KPI strip -->
+      <UniformGrid Columns="3" Rows="2">
+        <Border Classes="card" Margin="0,0,8,8">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiPresent" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding PresentToday}" Foreground="{DynamicResource EmeraldBrush}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="8,0,8,8">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiLate" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding LateToday}" Foreground="{DynamicResource WarningBrush}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="8,0,0,8">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiAbsent" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding AbsentToday}" Foreground="{DynamicResource ErrorBrush}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,8,8,0">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiLunch" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding OnLunchNow}" Foreground="{DynamicResource InfoBrush}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="8,8,8,0">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiTerminals" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding DevicesRatioText}" Foreground="{DynamicResource EmeraldBrush}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="8,8,0,0">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="KpiScans" Classes="kpi-label" />
+            <TextBlock Classes="kpi-value" Text="{Binding TodayScans}" Foreground="{DynamicResource OchreBrush}" />
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <!-- Quick actions -->
+      <Border Classes="card">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
+            <TextBlock x:Name="HoursLabel" Classes="subtle" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding RegularHours}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBlock x:Name="ExtraLabel" Classes="subtle" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding ExtraHours}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource OchreBrush}" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button x:Name="ScanButton" Classes="primary" Command="{Binding ScanCommand}" />
+            <Button x:Name="PullButton" Classes="ghost" Command="{Binding PullAllCommand}" />
+            <Button x:Name="ClockButton" Classes="ghost" Command="{Binding SyncClocksCommand}" />
+            <Button x:Name="RefreshButton" Classes="ghost" Command="{Binding RefreshCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Devices + activity -->
+      <Grid ColumnDefinitions="330,*">
+        <Border Grid.Column="0" Classes="card" Margin="0,0,9,0" MinHeight="320">
+          <DockPanel>
+            <TextBlock x:Name="DevicesTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+            <TextBlock Text="{Binding ScanStatus}" Classes="subtle" DockPanel.Dock="Top" Margin="0,0,0,8" />
+            <ItemsControl ItemsSource="{Binding Devices}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="soft" Margin="0,0,0,6">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Endpoint}" Classes="subtle" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding StatusText}" FontSize="11" />
+                        <TextBlock Text="{Binding LatencyText}" Classes="subtle" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="card" Margin="9,0,0,0" MinHeight="320">
+          <DockPanel>
+            <TextBlock x:Name="ActivityTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+            <ItemsControl ItemsSource="{Binding Activity}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,8">
+                    <Grid ColumnDefinitions="2*,1*,1*,Auto">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Column="1" Text="{Binding Department}" Classes="subtle" />
+                      <TextBlock Grid.Column="2" Text="{Binding WorkedText}" />
+                      <TextBlock Grid.Column="3" Text="{Binding StatusText}" Foreground="{DynamicResource EmeraldBrush}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

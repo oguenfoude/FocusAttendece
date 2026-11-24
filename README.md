@@ -18,7 +18,7 @@ Windows · Linux · macOS — one codebase, one clean design, no vendor DLLs.
 | Windows-only COM SDK / registry / DLLs | ✅ removed completely |
 | Live ZKTeco probe at `192.168.100.201` | ✅ correctly reports `CommKey required` |
 | Cross-platform data directory | ✅ Windows / macOS / Linux (XDG) |
-| Avalonia UI | ⏳ Phase 3 |
+| Avalonia GUI | ✅ 5 workspaces, AR/RTL + FR/LTR, OPGI design system — starts cleanly on Linux/Xvfb |
 | Installers + auto-update | ⏳ Phase 5 |
 
 Full plan: [`docs/REBUILD-PLAN.md`](docs/REBUILD-PLAN.md)
@@ -55,6 +55,17 @@ No device is ever invented: an empty scan is a valid result.
 
 ---
 
+## Run the GUI
+
+```bash
+dotnet run --project src/FocusPlus.Desktop -c Release
+```
+
+Five workspaces: **Dashboard**, **Terminals**, **Employees**, **Attendance**, **Settings**.
+Login gate with PBKDF2 auth; live Arabic (RTL) / French (LTR) switch; OPGI emerald/ochre
+design system; all editing happens in a single in-page drawer — no nested tabs or popups.
+On a headless Linux machine: `xvfb-run -a dotnet src/FocusPlus.Desktop/bin/Release/net10.0/FocusPlus.dll`.
+
 ## Projects
 
 ```
@@ -62,6 +73,7 @@ src/FocusPlus.Domain        entities, enums, attendance rule engine (pure)
 src/FocusPlus.Data          SQLite + Dapper, schema, repositories, backups
 src/FocusPlus.Hardware      native TCP/UDP 4370 protocol, discovery, parsers
 src/FocusPlus.Application   services, view models, exports
+src/FocusPlus.Desktop       Avalonia 11 GUI, OPGI theme, AR/FR resources
 tools/zk-probe              cross-platform field diagnostics CLI
 tests/FocusPlus.Tests       109 xUnit tests
 ```
