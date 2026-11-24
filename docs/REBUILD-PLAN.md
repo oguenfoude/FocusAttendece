@@ -47,7 +47,7 @@ Date: 2026-11-24 · Source reviewed: `github.com/oguenfoude/FocusAttendance`
 | Action | Items |
 |---|---|
 | **Keep as-is (ported)** | Attendance engine (`AttendanceCalculator`, `AttendanceSheetBuilder`, `AttendanceDayInput`), entities/enums, services, view models, `AppLogger`, `PasswordHasher`, CSV + bilingual HTML exports, 108 tests |
-| **Port with cleanup** | SQLite schema + repositories + `BackupService` (fix backup retention to documented 30), native ZKTeco protocol files (`ZkProtocolClient`, `ZkPacket`, `ZkFrameReader`, `ZkBufferParser`, `ZkCommand`, `ZkNativeEngine`, `LanScanner`) |
+| **Port with cleanup** | SQLite schema + repositories + `BackupService` (keep the tested 6-per-day policy; align docs to code), native ZKTeco protocol files (`ZkProtocolClient`, `ZkPacket`, `ZkFrameReader`, `ZkBufferParser`, `ZkCommand`, `ZkNativeEngine`, `LanScanner`) |
 | **Replace** | WPF shell → Avalonia; WPF-UI controls → FluentAvalonia; Windows COM SDK → native protocol only. SQLite + Dapper is **kept** (D1). |
 | **Delete** | `ZkComSdkEngine`, `ZkSdkBootstrapper`, all `sdk/*.dll`, `app.manifest`, `tools/*.ps1`/patch scripts, Windows-specific code-behind, old `UiRender` |
 
@@ -150,7 +150,7 @@ Rejected: .NET MAUI (no Linux), Electron/Tauri (new language + native modules), 
 
 - Keep `001_initial.sql` as-is; add numbered SQL migrations (`002_…`) with a checksum table applied in transaction under a single-instance lock. Preserve all table/column names and unique indexes so an old DB file can be upgraded in place.
 - Keep: WAL, `PRAGMA foreign_keys=ON`, soft-delete columns on all mutable tables, immutable `Punches`, `UNIQUE(DedupeKey)`, audit logs.
-- Fix: backup retention to the documented **30 rolling backups**; add checksummed migration history; single-instance lock around `Database.Migrate()` at startup.
+- Keep the tested backup policy: **6 slots per day**, older days removed after a successful backup. Add checksummed migration history; single-instance lock around startup migration.
 - Default DB path per OS: Windows `%LOCALAPPDATA%/FocusPlus`, macOS `~/Library/Application Support/FocusPlus`, Linux `$XDG_DATA_HOME/FocusPlus` (fallback `~/.local/share/FocusPlus`). Override with env var for tests.
 - Seed exactly: 1 site, 12 departments, 2 shifts, 1 SuperAdmin (`admin`, password from `FOCUS_ADMIN_PASSWORD` or forced change on first login). **0** employees/devices/punches.
 
@@ -182,7 +182,7 @@ GitHub Actions matrix — **Windows + Linux mandatory from day one (D2)**, macOS
 | Phase | Work | Exit criteria |
 |---|---|---|
 | **P0 — Foundation** | Install .NET 10 SDK; create new solution; port Domain + Application + native Hardware + Tests; delete COM/SDK code | `dotnet test` green on Linux; `zk-probe 192.168.100.201` reports `Locked` + firmware |
-| **P1 — Data** | Numbered SQL migrations + backup rework + old-DB import | Fresh DB has exactly baseline seed; migration from old DB passes; 30-backup retention verified |
+| **P1 — Data** | Numbered SQL migrations + old-DB import | Fresh DB has exactly baseline seed; migration from old DB passes; 6-per-day backup policy verified |
 | **P2 — Device UX** | `IDeviceGateway` + `DeviceHost`, add wizard, credential vault, state pills, diagnostics CLI | Locked device can be authenticated and pulled in a CLI-driven test; no raw exceptions in UI |
 | **P3 — UI shell + Dashboard** | Avalonia + FluentAvalonia, design tokens, RTL/theme, dashboard end-to-end | Dashboard renders identically on Win/macOS/Linux screenshot harness |
 | **P4 — Remaining screens** | Terminals, Employees, Attendance, Settings | Feature parity from §5; all drawer flows and exports working |
