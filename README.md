@@ -53,6 +53,15 @@ dotnet run --project tools/zk-probe -c Release -- 192.168.100.201 --key 12345 --
 Discovery states: `Verified` · `CommKey required` · `Port open — unverified` · `Unreachable`.
 No device is ever invented: an empty scan is a valid result.
 
+Verified live terminal (comm key `0`):
+
+```
+192.168.100.201  Verified ZKTeco
+Serial  KMY2260600018   Model  UF100Plus-S
+Firmware Ver 6.60 Sep 10 2019   Platform ZMM221_TFT
+Users 4 · Fingers 2 · Faces 2 · Punches 22
+```
+
 ---
 
 ## Run the GUI

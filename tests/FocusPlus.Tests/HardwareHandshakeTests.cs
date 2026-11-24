@@ -59,15 +59,16 @@ public sealed class HardwareHandshakeTests
     }
 
     [Fact]
-    public void Client_Fails_WhenCommKeyIsRequiredButMissing()
+    public void Client_AttemptsAuth_WithZeroCommKey()
     {
-        using var server = new FakeZkServer(requireCommKey: true);
+        // Zero is the factory default on many terminals. It must still be sent to CMD_AUTH.
+        using var server = new FakeZkServer(requireCommKey: true, expectedKey: 0);
         using var client = new ZkProtocolClient(new ZkEndpoint("127.0.0.1", server.Port, 0), udp: false, timeoutMs: 5000);
 
-        var exception = Assert.Throws<ZkException>(() => client.Connect());
+        client.Connect();
 
-        Assert.Equal(ZkCommand.AckUnauth, exception.Code);
-        Assert.False(server.ReceivedAuth);
+        Assert.True(server.ReceivedAuth);
+        Assert.Equal("FAKE-SN-001", client.ReadOption("~SerialNumber"));
     }
 
     [Fact]
@@ -209,11 +210,13 @@ public sealed class HardwareHandshakeTests
         private readonly TcpListener _listener;
         private readonly CancellationTokenSource _cts = new();
         private readonly bool _requireCommKey;
+        private readonly int _expectedKey;
         private readonly Task _loop;
 
-        public FakeZkServer(bool requireCommKey)
+        public FakeZkServer(bool requireCommKey, int expectedKey = 12345)
         {
             _requireCommKey = requireCommKey;
+            _expectedKey = expectedKey;
             _listener = new TcpListener(IPAddress.Loopback, 0);
             _listener.Start();
             Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
@@ -268,8 +271,13 @@ public sealed class HardwareHandshakeTests
                             break;
 
                         case ZkCommand.Auth:
-                            ReceivedAuth = true;
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId).ConfigureAwait(false);
+                            var expected = ZkPacket.MakeCommKey(_expectedKey, session);
+                            var accepted = payload.SequenceEqual(expected);
+                            if (accepted)
+                            {
+                                ReceivedAuth = true;
+                            }
+                            await ReplyAsync(stream, accepted ? ZkCommand.AckOk : ZkCommand.AckError, session, replyId).ConfigureAwait(false);
                             break;
 
                         case ZkCommand.OptionsRrq:

@@ -114,13 +114,13 @@ public sealed class ZkProtocolClient : IDisposable
         var (code, _) = Send(ZkCommand.Connect, []);
         if (code == ZkCommand.AckUnauth)
         {
-            if (_endpoint.CommKey == 0)
-            {
-                throw new ZkException("The terminal requires a COMM key but none was configured.", code);
-            }
-
+            // 0 is a valid comm key on many terminals — never skip the AUTH attempt.
             var key = ZkPacket.MakeCommKey(_endpoint.CommKey, _sessionId);
             (code, _) = Send(ZkCommand.Auth, key);
+            if (code is not (ZkCommand.AckOk or ZkCommand.AckData))
+            {
+                throw new ZkException($"COMM key rejected by the terminal (0x{code:X4}).", code);
+            }
         }
 
         if (code is not (ZkCommand.AckOk or ZkCommand.AckData))
