@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>FocusPlus.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FocusPlus.Domain\FocusPlus.Domain.csproj" />
+    <ProjectReference Include="..\..\src\FocusPlus.Data\FocusPlus.Data.csproj" />
+    <ProjectReference Include="..\..\src\FocusPlus.Hardware\FocusPlus.Hardware.csproj" />
+    <ProjectReference Include="..\..\src\FocusPlus.Application\FocusPlus.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

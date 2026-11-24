@@ -48,7 +48,7 @@ Date: 2026-11-24 · Source reviewed: `github.com/oguenfoude/FocusAttendance`
 |---|---|
 | **Keep as-is (ported)** | Attendance engine (`AttendanceCalculator`, `AttendanceSheetBuilder`, `AttendanceDayInput`), entities/enums, services, view models, `AppLogger`, `PasswordHasher`, CSV + bilingual HTML exports, 108 tests |
 | **Port with cleanup** | SQLite schema + repositories + `BackupService` (fix backup retention to documented 30), native ZKTeco protocol files (`ZkProtocolClient`, `ZkPacket`, `ZkFrameReader`, `ZkBufferParser`, `ZkCommand`, `ZkNativeEngine`, `LanScanner`) |
-| **Replace** | WPF shell → Avalonia; WPF-UI controls → FluentAvalonia; `Microsoft.Data.Sqlite + Dapper` → EF Core SQLite (decision D1); `Task`-based VM commands stay |
+| **Replace** | WPF shell → Avalonia; WPF-UI controls → FluentAvalonia; Windows COM SDK → native protocol only. SQLite + Dapper is **kept** (D1). |
 | **Delete** | `ZkComSdkEngine`, `ZkSdkBootstrapper`, all `sdk/*.dll`, `app.manifest`, `tools/*.ps1`/patch scripts, Windows-specific code-behind, old `UiRender` |
 
 ---
@@ -59,9 +59,8 @@ Date: 2026-11-24 · Source reviewed: `github.com/oguenfoude/FocusAttendance`
 FocusPlus.sln
 ├─ src/FocusPlus.Domain                 net10.0  entities, enums, attendance engine  (ported)
 ├─ src/FocusPlus.Application            net10.0  services, MVVM VMs, exports, IDeviceGateway (ported)
-├─ src/FocusPlus.Infrastructure.Data    net10.0  EF Core DbContext, repositories, backups
-├─ src/FocusPlus.Infrastructure.Data.Migrations  net10.0  design-time factory + migrations
-├─ src/FocusPlus.Infrastructure.Devices net10.0  native ZK protocol, discovery, DeviceHost
+├─ src/FocusPlus.Data                   net10.0  SQLite + Dapper, repositories, backups, numbered migrations
+├─ src/FocusPlus.Hardware               net10.0  native ZK protocol, discovery, DeviceHost
 ├─ src/FocusPlus.Desktop                net10.0  Avalonia head: App.axaml, Views/, Controls/, Resources/
 ├─ tools/zk-probe                       net10.0  CLI diagnostics for the LAN/device (replaces PS scripts)
 ├─ packaging/                           icons, .desktop, entitlements, Velopack config
@@ -183,7 +182,7 @@ GitHub Actions matrix — **Windows + Linux mandatory from day one (D2)**, macOS
 | Phase | Work | Exit criteria |
 |---|---|---|
 | **P0 — Foundation** | Install .NET 10 SDK; create new solution; port Domain + Application + native Hardware + Tests; delete COM/SDK code | `dotnet test` green on Linux; `zk-probe 192.168.100.201` reports `Locked` + firmware |
-| **P1 — Data** | EF Core SQLite + migrations + backup rework + old-DB import | Fresh DB has exactly baseline seed; migration from old DB passes; 30-backup retention verified |
+| **P1 — Data** | Numbered SQL migrations + backup rework + old-DB import | Fresh DB has exactly baseline seed; migration from old DB passes; 30-backup retention verified |
 | **P2 — Device UX** | `IDeviceGateway` + `DeviceHost`, add wizard, credential vault, state pills, diagnostics CLI | Locked device can be authenticated and pulled in a CLI-driven test; no raw exceptions in UI |
 | **P3 — UI shell + Dashboard** | Avalonia + FluentAvalonia, design tokens, RTL/theme, dashboard end-to-end | Dashboard renders identically on Win/macOS/Linux screenshot harness |
 | **P4 — Remaining screens** | Terminals, Employees, Attendance, Settings | Feature parity from §5; all drawer flows and exports working |
@@ -202,7 +201,7 @@ GitHub Actions matrix — **Windows + Linux mandatory from day one (D2)**, macOS
 | Device clock/timezone confusion | Store device-local time + offset; show drift; never silently accept wrong time |
 | Bulk pull duplicates / data loss | Dedupe + watermark; never clear device logs until committed locally |
 | macOS/Linux firewall blocks discovery | Manual IP entry always available; `zk-probe` CLI; clear onboarding docs |
-| EF Core SQLite migration edge cases | Separate migrations project + bundle; test upgrade from old DB file |
+| SQLite migration edge cases | Numbered transactional migrations with checksums; test upgrade from the old DB file |
 
 ---
 
