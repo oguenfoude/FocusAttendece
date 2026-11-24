@@ -21,7 +21,8 @@ Windows · Linux · macOS — one codebase, one clean design, no vendor DLLs.
 | Avalonia GUI | ✅ 5 workspaces, AR/RTL + FR/LTR, OPGI design system — starts cleanly on Linux/Xvfb |
 | Installers + auto-update | ⏳ Phase 5 |
 
-Full plan: [`docs/REBUILD-PLAN.md`](docs/REBUILD-PLAN.md)
+- [Rebuild plan](docs/REBUILD-PLAN.md)
+- [OPGI DZ requirements, status and where to update data](docs/OPGI-DZ-REQUIREMENTS.md)
 
 ---
 

@@ -1,7 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FocusPlus.Desktop.Views.SettingsView">
-  <ScrollViewer>
+  <Grid>
+  <ScrollViewer x:Name="ContentScroll">
     <StackPanel Spacing="14">
 
       <Border Classes="card">
@@ -18,6 +19,8 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="8,0,0,0">
               <TextBlock x:Name="DbLabel" Classes="kpi-label" />
+              <TextBlock Text="{Binding DbCounts}" Classes="subtle" />
+              <TextBlock Text="{Binding DbPath}" Classes="subtle" TextWrapping="Wrap" />
               <TextBlock Text="{Binding LatestBackupText}" Classes="subtle" />
             </StackPanel>
           </Grid>
@@ -40,11 +43,16 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
                   <Border Classes="soft" Margin="0,0,0,6">
-                    <StackPanel>
-                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                      <TextBlock Text="{Binding TimesText}" Classes="subtle" />
-                      <TextBlock Text="{Binding TargetText}" Classes="subtle" />
-                    </StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding TimesText}" Classes="subtle" />
+                        <TextBlock Text="{Binding TargetText}" Classes="subtle" />
+                      </StackPanel>
+                      <Button Grid.Column="1" x:Name="EditRule" Classes="ghost" Content="✎"
+                              Command="{Binding $parent[ItemsControl].DataContext.EditRuleCommand}"
+                              CommandParameter="{Binding}" VerticalAlignment="Center" />
+                    </Grid>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -113,4 +121,80 @@
       </Grid>
     </StackPanel>
   </ScrollViewer>
+
+  <!-- Rule editor drawer: this is where OPGI working time is updated -->
+  <Border Classes="card" Width="470" HorizontalAlignment="Right" VerticalAlignment="Stretch"
+          IsVisible="{Binding IsRuleDrawerOpen}" ZIndex="10" Background="{DynamicResource SurfaceBrush}">
+    <ScrollViewer>
+      <StackPanel Spacing="10" DataContext="{Binding RuleEditor}">
+        <TextBlock x:Name="RuleDrawerTitle" Classes="section-title" Text="{Binding $parent[UserControl].DataContext.RuleDrawerTitle}" />
+
+        <TextBlock x:Name="RuleCodeLabel" Classes="kpi-label" />
+        <TextBox Text="{Binding Code}" />
+        <TextBlock x:Name="RuleArLabel" Classes="kpi-label" />
+        <TextBox Text="{Binding NameAr}" />
+        <TextBlock x:Name="RuleFrLabel" Classes="kpi-label" />
+        <TextBox Text="{Binding NameFr}" />
+
+        <Grid ColumnDefinitions="*,*">
+          <StackPanel Grid.Column="0" Margin="0,0,6,0">
+            <TextBlock x:Name="MorningStartLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding MorningStart}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Margin="6,0,0,0">
+            <TextBlock x:Name="EveningEndLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding EveningEnd}" />
+          </StackPanel>
+        </Grid>
+        <Grid ColumnDefinitions="*,*">
+          <StackPanel Grid.Column="0" Margin="0,0,6,0">
+            <TextBlock x:Name="LunchStartLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding LunchStart}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Margin="6,0,0,0">
+            <TextBlock x:Name="LunchEndLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding LunchEnd}" />
+          </StackPanel>
+        </Grid>
+
+        <Grid ColumnDefinitions="*,*,*">
+          <StackPanel Grid.Column="0" Margin="0,0,5,0">
+            <TextBlock x:Name="MorningGraceLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding MorningGrace}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Margin="5,0,5,0">
+            <TextBlock x:Name="AfternoonGraceLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding AfternoonGrace}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Margin="5,0,0,0">
+            <TextBlock x:Name="EarlyLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding EarlyLeaveGrace}" />
+          </StackPanel>
+        </Grid>
+        <Grid ColumnDefinitions="*,*,*">
+          <StackPanel Grid.Column="0" Margin="0,0,5,0">
+            <TextBlock x:Name="LunchDeductionLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding LunchDeduction}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Margin="5,0,5,0">
+            <TextBlock x:Name="AntiBounceLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding AntiBounce}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Margin="5,0,0,0">
+            <TextBlock x:Name="TargetLabel" Classes="kpi-label" />
+            <TextBox Text="{Binding Target}" />
+          </StackPanel>
+        </Grid>
+
+        <CheckBox Content="Default rule" IsChecked="{Binding IsDefault}" />
+        <WrapPanel>
+          <Button x:Name="SaveRuleButton" Classes="primary" Content="Save"
+                  Command="{Binding $parent[UserControl].DataContext.SaveRuleCommand}" Margin="0,8,8,0" />
+          <Button x:Name="CloseRuleButton" Classes="ghost" Content="Close"
+                  Command="{Binding $parent[UserControl].DataContext.CloseRuleDrawerCommand}" Margin="0,8,8,0" />
+        </WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+  </Grid>
 </UserControl>
