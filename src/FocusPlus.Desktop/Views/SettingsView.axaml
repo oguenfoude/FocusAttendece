@@ -86,6 +86,24 @@
               <TextBlock x:Name="BackupTitle" Classes="section-title" />
               <Button x:Name="BackupButton" Classes="primary" Command="{Binding BackupNowCommand}" />
             </StackPanel>
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,10">
+              <Grid ColumnDefinitions="*,*,*">
+                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                  <TextBlock x:Name="BackupDailyTimeLabel" Classes="kpi-label" />
+                  <TextBox Text="{Binding BackupDailyTimeText}" Watermark="20:00" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="6,0,6,0">
+                  <TextBlock x:Name="BackupKeepDaysLabel" Classes="kpi-label" />
+                  <TextBox Text="{Binding BackupKeepDaysText}" Watermark="30" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="6,0,0,0">
+                  <TextBlock x:Name="BackupKeepMonthlyLabel" Classes="kpi-label" />
+                  <TextBox Text="{Binding BackupKeepMonthlyText}" Watermark="12" />
+                </StackPanel>
+              </Grid>
+              <Button x:Name="SaveBackupPolicyButton" Classes="primary" HorizontalAlignment="Left"
+                      Command="{Binding SaveBackupPolicyCommand}" />
+            </StackPanel>
             <ItemsControl ItemsSource="{Binding Backups}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>

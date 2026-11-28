@@ -5,49 +5,68 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
       <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
-        <Grid ColumnDefinitions="*,Auto">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <StackPanel Spacing="3">
             <TextBlock x:Name="HeaderText" Classes="section-title" />
-            <TextBlock Text="{Binding SdkStatus}" Classes="subtle" />
+            <TextBlock Text="{Binding SdkStatus}" Classes="subtle" TextWrapping="Wrap" />
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <Button x:Name="ScanButton" Classes="primary" Command="{Binding ScanCommand}" />
-            <Button x:Name="RefreshButton" Classes="ghost" Command="{Binding RefreshCommand}" />
+            <Button x:Name="RefreshButton" Classes="ghost" Click="Refresh_Click" />
             <Button x:Name="AddButton" Classes="ghost" Command="{Binding AddByIpCommand}" />
           </StackPanel>
         </Grid>
       </Border>
 
-      <TextBlock Grid.Row="1" Text="{Binding StatusMessage}" Classes="subtle" Margin="4,0,0,10" />
+      <TextBlock Grid.Row="1" Text="{Binding StatusMessage}" Classes="subtle" Margin="4,0,4,10" />
 
-      <Grid Grid.Row="2" ColumnDefinitions="*,360">
-        <Border Grid.Column="0" Classes="card" Margin="0,0,10,0">
-          <DockPanel>
-            <TextBlock x:Name="ListTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
-            <ListBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
-                     Background="Transparent" BorderThickness="0">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <Border Padding="10,8" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <StackPanel Spacing="2">
-                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Endpoint}" Classes="subtle" />
-                        <TextBlock Text="{Binding Serial}" Classes="subtle" />
-                      </StackPanel>
-                      <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding StatusText}" />
-                        <TextBlock Text="{Binding Firmware}" Classes="subtle" />
-                      </StackPanel>
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </DockPanel>
+      <Grid Grid.Row="2" ColumnDefinitions="*,360" ColumnSpacing="10">
+        <Border Grid.Column="0" Classes="card">
+          <Grid>
+            <DockPanel>
+              <TextBlock x:Name="ListTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,10" />
+              <ListBox x:Name="DeviceList" ItemsSource="{Binding Devices}"
+                       SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
+                       SelectionChanged="DeviceList_SelectionChanged"
+                       Background="Transparent" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Border Padding="10,8" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <StackPanel Spacing="2">
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Endpoint}" Classes="subtle technical" />
+                          <TextBlock Text="{Binding Serial}" Classes="subtle technical" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+                          <TextBlock Text="{Binding StatusText}" />
+                          <TextBlock Text="{Binding Firmware}" Classes="subtle technical" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </DockPanel>
+
+            <StackPanel x:Name="EmptyPanel" IsVisible="False" Spacing="10" MaxWidth="380"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock x:Name="EmptyTitle" Classes="state-title" />
+              <TextBlock x:Name="EmptyHint" Classes="state-hint" />
+              <Button x:Name="EmptyAction" Classes="primary" Command="{Binding ScanCommand}"
+                      HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <Border x:Name="LoadingPanel" IsVisible="False" Background="{DynamicResource SurfaceBrush}">
+              <StackPanel Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="180" />
+                <TextBlock x:Name="LoadingText" Classes="state-hint" />
+              </StackPanel>
+            </Border>
+          </Grid>
         </Border>
 
-        <Border Grid.Column="1" Classes="card" Margin="10,0,0,0">
+        <Border Grid.Column="1" Classes="card">
           <DockPanel>
             <TextBlock x:Name="ScanTitle" Classes="section-title" DockPanel.Dock="Top" Margin="0,0,0,6" />
             <TextBlock Text="{Binding ScanFound}" Classes="subtle" DockPanel.Dock="Top" Margin="0,0,0,8" />
@@ -56,7 +75,7 @@
                 <DataTemplate>
                   <Border Classes="soft" Margin="0,0,0,6">
                     <Grid RowDefinitions="Auto,Auto,Auto">
-                      <TextBlock Text="{Binding IpAddress}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding IpAddress}" FontWeight="SemiBold" Classes="technical" />
                       <TextBlock Grid.Row="1" Text="{Binding HandshakeText}" Classes="subtle" />
                       <Button Grid.Row="2" x:Name="AddFound" Classes="ghost" Margin="0,6,0,0"
                               Content="+" Command="{Binding $parent[ItemsControl].DataContext.AddDiscoveredCommand}"
@@ -70,50 +89,50 @@
         </Border>
       </Grid>
 
-      <TextBlock Grid.Row="3" Text="{Binding NetworkLog}" Classes="subtle" MaxHeight="60" TextWrapping="Wrap" Margin="4,8,0,0" />
+      <TextBlock Grid.Row="3" Text="{Binding NetworkLog}" Classes="subtle technical"
+                 MaxHeight="60" TextWrapping="Wrap" Margin="4,8,4,0" />
     </Grid>
 
-    <!-- In-page drawer -->
-    <Border Classes="card" IsVisible="{Binding IsDrawerOpen}" Width="460"
-            HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,0,0,0"
-            Background="{DynamicResource SurfaceBrush}" ZIndex="10">
+    <!-- In-page drawer: right in French LTR, left in Arabic RTL (set from code-behind) -->
+    <Border x:Name="Drawer" Classes="drawer" IsVisible="{Binding IsDrawerOpen}" Width="460"
+            HorizontalAlignment="Right">
       <ScrollViewer>
-        <StackPanel Spacing="12" DataContext="{Binding}">
+        <StackPanel Spacing="12" DataContext="{Binding}" KeyboardNavigation.TabNavigation="Cycle">
           <TextBlock Text="{Binding DrawerTitle}" Classes="section-title" />
-          <TextBlock Text="{Binding SelectedDeviceSubtitle}" Classes="subtle" />
+          <TextBlock Text="{Binding SelectedDeviceSubtitle}" Classes="subtle technical" />
 
           <TextBlock x:Name="NameLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding EditName}" />
+          <TextBox x:Name="NameBox" Text="{Binding EditName}" IsEnabled="{Binding CanEditName}" />
           <TextBlock x:Name="IpLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding EditIp}" />
-          <Grid ColumnDefinitions="*,*">
-            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+          <TextBox x:Name="IpBox" Text="{Binding EditIp}" Classes="technical" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <StackPanel Grid.Column="0">
               <TextBlock x:Name="PortLabel" Classes="kpi-label" />
-              <TextBox Text="{Binding EditPort}" />
+              <TextBox Text="{Binding EditPort}" Classes="technical" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+            <StackPanel Grid.Column="1">
               <TextBlock x:Name="KeyLabel" Classes="kpi-label" />
-              <TextBox Text="{Binding EditCommKey}" />
+              <TextBox Text="{Binding EditCommKey}" Classes="technical" />
             </StackPanel>
           </Grid>
           <TextBlock x:Name="MaskLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding EditMask}" />
+          <TextBox Text="{Binding EditMask}" Classes="technical" />
           <TextBlock x:Name="GatewayLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding EditGateway}" />
+          <TextBox Text="{Binding EditGateway}" Classes="technical" />
           <TextBlock x:Name="NoteLabel" Classes="kpi-label" />
           <TextBox Text="{Binding EditNote}" AcceptsReturn="True" Height="70" />
 
-          <TextBlock Text="{Binding InfoDump}" Classes="subtle" TextWrapping="Wrap"
+          <TextBlock Text="{Binding InfoDump}" Classes="subtle technical" TextWrapping="Wrap"
                      IsVisible="{Binding HasInfoDump}" MaxHeight="160" />
 
           <WrapPanel Orientation="Horizontal">
-            <Button x:Name="SaveButton" Classes="primary" Command="{Binding SaveDeviceCommand}" />
-            <Button x:Name="PullButton" Classes="ghost" Command="{Binding PullSelectedCommand}" />
-            <Button x:Name="SyncButton" Classes="ghost" Command="{Binding SyncSelectedCommand}" />
-            <Button x:Name="RebootButton" Classes="ghost" Command="{Binding RebootCommand}" />
-            <Button x:Name="UsersButton" Classes="ghost" Command="{Binding ReadUsersCommand}" />
-            <Button x:Name="DumpButton" Classes="ghost" Command="{Binding DumpInfoCommand}" />
-            <Button x:Name="CloseButton" Classes="ghost" Command="{Binding CloseDrawerCommand}" />
+            <Button x:Name="SaveButton" Classes="primary" Command="{Binding SaveDeviceCommand}" Margin="0,0,8,8" />
+            <Button x:Name="PullButton" Classes="ghost" Command="{Binding PullSelectedCommand}" Margin="0,0,8,8" />
+            <Button x:Name="SyncButton" Classes="ghost" Command="{Binding SyncSelectedCommand}" Margin="0,0,8,8" />
+            <Button x:Name="RebootButton" Classes="ghost" Command="{Binding RebootCommand}" Margin="0,0,8,8" />
+            <Button x:Name="UsersButton" Classes="ghost" Command="{Binding ReadUsersCommand}" Margin="0,0,8,8" />
+            <Button x:Name="DumpButton" Classes="ghost" Command="{Binding DumpInfoCommand}" Margin="0,0,8,8" />
+            <Button x:Name="CloseButton" Classes="ghost" Command="{Binding CloseDrawerCommand}" Margin="0,0,8,8" />
           </WrapPanel>
         </StackPanel>
       </ScrollViewer>

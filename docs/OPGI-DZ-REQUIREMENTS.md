@@ -61,7 +61,9 @@ Extra hours use `OvertimeMultiplier`. Deductions are previewed, never applied si
 2. **No hard delete** — archive columns + restore on every mutable table; raw punches are immutable.
 3. **Strict dedup** — `UNIQUE(serial + pin + punch time)`; re-pulling a terminal never duplicates.
 4. **Audit trail** — logins, device IP changes, archives/restores, HR adjustments, hardware operations.
-5. **Backups** — 6 slots/day via `VACUUM INTO`, startup safety copy, pre-restore safety copy.
+5. **Backups** — one daily copy/day via `VACUUM INTO` (single canonical file per local date, hash-stamped),
+   newest 30 daily copies plus 12 monthly anchors retained, older payloads deleted,
+   startup safety copy, pre-restore safety copy.
 6. **Local-first** — SQLite file on the workstation, WAL, foreign keys ON. No cloud dependency.
 
 ## 7. Terminals (ZKTeco / ZKSoftware)

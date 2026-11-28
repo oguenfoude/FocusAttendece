@@ -37,6 +37,10 @@ public partial class SettingsView : UserControl
         Set("ThemeButton", "Theme");
         Set("NewRuleButton", "Shifts");
         Set("BackupButton", "Backup");
+        Set("BackupDailyTimeLabel", "Hours");
+        Set("BackupKeepDaysLabel", "WorkDays");
+        Set("BackupKeepMonthlyLabel", "Month");
+        Set("SaveBackupPolicyButton", "Save");
         Set("RuleCodeLabel", "Serial");
         Set("RuleArLabel", "Name");
         Set("RuleFrLabel", "Name");

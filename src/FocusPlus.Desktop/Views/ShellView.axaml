@@ -1,39 +1,42 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FocusPlus.Desktop.Views.ShellView">
-  <Grid ColumnDefinitions="224,*">
+  <Grid x:Name="ShellRoot" ColumnDefinitions="224,*">
 
-    <!-- Sidebar -->
-    <Border Grid.Column="0" Background="{DynamicResource EmeraldBrush}" Padding="18">
+    <!-- Sidebar: column 0 in French (LTR), column 1 in Arabic (RTL) -->
+    <Border x:Name="Sidebar" Grid.Column="0" Background="{DynamicResource EmeraldBrush}" Padding="18">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top" Spacing="4">
           <TextBlock Text="FocusPlus" Foreground="White" FontSize="24" FontWeight="SemiBold" />
           <TextBlock x:Name="SideSubtitle" Foreground="#C8E2DA" FontSize="11" TextWrapping="Wrap" />
         </StackPanel>
 
-        <StackPanel DockPanel.Dock="Top" Margin="0,30,0,0" Spacing="4">
-          <TextBlock Text="—" Foreground="#77B9AA" FontSize="10" Margin="14,0,0,4" />
-          <Button x:Name="NavDashboard" Classes="side-nav" Click="Nav_Click" Tag="dashboard" />
-          <Button x:Name="NavTerminals" Classes="side-nav" Click="Nav_Click" Tag="terminals" />
-          <Button x:Name="NavEmployees" Classes="side-nav" Click="Nav_Click" Tag="employees" />
-          <Button x:Name="NavAttendance" Classes="side-nav" Click="Nav_Click" Tag="attendance" />
-          <Button x:Name="NavSettings" Classes="side-nav" Click="Nav_Click" Tag="settings" />
-        </StackPanel>
+        <ScrollViewer DockPanel.Dock="Top" Margin="0,30,0,0" VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Text="—" Foreground="#77B9AA" FontSize="10" Margin="14,0,14,4" />
+            <Button x:Name="NavDashboard" Classes="side-nav" Click="Nav_Click" Tag="dashboard" />
+            <Button x:Name="NavTerminals" Classes="side-nav" Click="Nav_Click" Tag="terminals" />
+            <Button x:Name="NavEmployees" Classes="side-nav" Click="Nav_Click" Tag="employees" />
+            <Button x:Name="NavAttendance" Classes="side-nav" Click="Nav_Click" Tag="attendance" />
+            <Button x:Name="NavSettings" Classes="side-nav" Click="Nav_Click" Tag="settings" />
+          </StackPanel>
+        </ScrollViewer>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="6">
           <Button x:Name="LangButton" Classes="side-nav" Click="Lang_Click" />
           <Button x:Name="SignOutButton" Classes="side-nav" Click="SignOut_Click" />
-          <TextBlock x:Name="OperatorText" Foreground="#A9D4C8" FontSize="11" Margin="14,8,0,0" />
+          <TextBlock x:Name="OperatorText" Foreground="#A9D4C8" FontSize="11"
+                     Margin="14,8,14,0" TextTrimming="CharacterEllipsis" />
         </StackPanel>
       </DockPanel>
     </Border>
 
-    <!-- Main -->
-    <Grid Grid.Column="1" RowDefinitions="64,*,40">
+    <!-- Main workspace: every page inherits the root flow direction -->
+    <Grid x:Name="MainArea" Grid.Column="1" RowDefinitions="64,*,40">
       <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
               BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
               Padding="24,0">
-        <Grid ColumnDefinitions="*,Auto">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
             <TextBlock x:Name="PageTitle" Classes="page-title" VerticalAlignment="Center" />
             <TextBlock x:Name="PageSubtitle" Classes="subtle" VerticalAlignment="Center" />
@@ -48,7 +51,8 @@
 
       <Border x:Name="SnackBar" Grid.Row="2" Background="{DynamicResource EmeraldDeepBrush}"
               IsVisible="False" Padding="22,0">
-        <TextBlock x:Name="SnackText" Foreground="White" FontSize="12" VerticalAlignment="Center" />
+        <TextBlock x:Name="SnackText" Foreground="White" FontSize="12"
+                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
       </Border>
     </Grid>
   </Grid>

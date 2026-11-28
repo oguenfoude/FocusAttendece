@@ -2,6 +2,7 @@ using FocusPlus.Application.Services;
 using FocusPlus.Data;
 using FocusPlus.Data.Repositories;
 using FocusPlus.Hardware;
+using Microsoft.Data.Sqlite;
 
 namespace FocusPlus.Application;
 
@@ -32,7 +33,7 @@ public sealed class AppHost : IAsyncDisposable
         Users = new AppUserRepository(Db);
         Preferences = new SettingsRepository(Db);
 
-        Backups = new BackupService(Db);
+        Backups = new BackupService(Db, logError: Logger.Error);
         Logger.Info("ZKTeco engine: native port-4370 protocol (cross-platform, no vendor SDK).");
         Hardware = new ZkHardwareService();
 
@@ -157,6 +158,17 @@ public sealed class AppHost : IAsyncDisposable
 
     public void StartBackgroundServices()
     {
+        try
+        {
+            BackupScheduler.DailyTime = Settings.GetDailyBackupTime();
+            BackupScheduler.KeepDays = Settings.GetBackupKeepDays();
+            BackupScheduler.KeepMonthly = Settings.GetBackupKeepMonthly();
+        }
+        catch (SqliteException ex)
+        {
+            Logger.Error("The stored backup policy could not be read; scheduler defaults are used.", ex);
+        }
+
         Monitor.Start();
         BackupScheduler.Start();
     }

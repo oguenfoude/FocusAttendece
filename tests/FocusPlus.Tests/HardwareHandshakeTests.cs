@@ -75,6 +75,7 @@ public sealed class HardwareHandshakeTests
     public async Task Scan_ClassifiesCommKeyProtectedTerminal()
     {
         using var server = new FakeZkServer(requireCommKey: true);
+        await server.WaitUntilReadyAsync();
         var scanner = new LanScanner(perSubnetLimit: 1, probeTimeoutMs: 2500);
 
         var result = await scanner.ProbeAsync("127.0.0.1", server.Port, 0);
@@ -88,6 +89,7 @@ public sealed class HardwareHandshakeTests
     public async Task Scan_VerifiesAnUnprotectedTerminal()
     {
         using var server = new FakeZkServer(requireCommKey: false);
+        await server.WaitUntilReadyAsync();
         var scanner = new LanScanner(perSubnetLimit: 1, probeTimeoutMs: 2500);
 
         var result = await scanner.ProbeAsync("127.0.0.1", server.Port, 0);
@@ -204,14 +206,25 @@ public sealed class HardwareHandshakeTests
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    /// <summary>Minimal ZKTeco server used to validate the handshake sequence.</summary>
+    /// <summary>
+    /// Minimal ZKTeco server used to validate the handshake sequence. Accept and serve run on
+    /// dedicated threads, not the thread pool: under an xunit parallel burst a pool-starved
+    /// server would accept the TCP connect (kernel backlog) but never run the handshake, which
+    /// makes ProbeAsync report an unverified port. <see cref="WaitUntilReadyAsync"/> is a real
+    /// readiness gate: it completes only after the accept loop has actually accepted a socket.
+    /// </summary>
     private sealed class FakeZkServer : IDisposable
     {
+        private static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(10);
+
         private readonly TcpListener _listener;
         private readonly CancellationTokenSource _cts = new();
         private readonly bool _requireCommKey;
         private readonly int _expectedKey;
-        private readonly Task _loop;
+        private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly Thread _acceptThread;
+        private readonly object _clientsLock = new();
+        private readonly List<TcpClient> _clients = [];
 
         public FakeZkServer(bool requireCommKey, int expectedKey = 12345)
         {
@@ -220,7 +233,9 @@ public sealed class HardwareHandshakeTests
             _listener = new TcpListener(IPAddress.Loopback, 0);
             _listener.Start();
             Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
-            _loop = Task.Run(AcceptLoopAsync);
+            _acceptThread = new Thread(AcceptLoop) { IsBackground = true, Name = nameof(FakeZkServer) };
+            _acceptThread.Start();
+            Prime();
         }
 
         public int Port { get; }
@@ -229,28 +244,51 @@ public sealed class HardwareHandshakeTests
 
         public ushort? FirstConnectReplyId { get; private set; }
 
-        private async Task AcceptLoopAsync()
+        /// <summary>Completes once the accept loop has accepted a connection and is serving.</summary>
+        public Task WaitUntilReadyAsync() => _ready.Task;
+
+        /// <summary>Blocks until the accept loop proves liveness, so no test races the server start.</summary>
+        private void Prime()
+        {
+            using var socket = new TcpClient();
+            socket.Connect(IPAddress.Loopback, Port);
+            if (!_ready.Task.Wait(ReadyTimeout))
+            {
+                throw new InvalidOperationException("FakeZkServer accepted no connection within the readiness timeout.");
+            }
+        }
+
+        private void AcceptLoop()
         {
             while (!_cts.IsCancellationRequested)
             {
                 TcpClient client;
                 try
                 {
-                    client = await _listener.AcceptTcpClientAsync(_cts.Token).ConfigureAwait(false);
+                    client = _listener.AcceptTcpClient();
                 }
-                catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException or SocketException)
+                catch (Exception ex) when (ex is ObjectDisposedException or SocketException or InvalidOperationException)
                 {
                     return;
                 }
 
-                _ = Task.Run(() => ServeAsync(client));
+                lock (_clientsLock)
+                {
+                    _clients.Add(client);
+                }
+
+                // The listener has accepted a real connection: the server is reachable and serving.
+                _ready.TrySetResult();
+
+                var serve = new Thread(() => Serve(client)) { IsBackground = true };
+                serve.Start();
             }
         }
 
-        private async Task ServeAsync(TcpClient client)
+        private void Serve(TcpClient client)
         {
             using var _ = client;
-            await using var stream = client.GetStream();
+            using var stream = client.GetStream();
             ushort session = 0;
             try
             {
@@ -267,7 +305,7 @@ public sealed class HardwareHandshakeTests
                         case ZkCommand.Connect:
                             FirstConnectReplyId ??= replyId;
                             session = 0x2222;
-                            await ReplyAsync(stream, _requireCommKey ? ZkCommand.AckUnauth : ZkCommand.AckOk, session, replyId).ConfigureAwait(false);
+                            Reply(stream, _requireCommKey ? ZkCommand.AckUnauth : ZkCommand.AckOk, session, replyId);
                             break;
 
                         case ZkCommand.Auth:
@@ -277,7 +315,7 @@ public sealed class HardwareHandshakeTests
                             {
                                 ReceivedAuth = true;
                             }
-                            await ReplyAsync(stream, accepted ? ZkCommand.AckOk : ZkCommand.AckError, session, replyId).ConfigureAwait(false);
+                            Reply(stream, accepted ? ZkCommand.AckOk : ZkCommand.AckError, session, replyId);
                             break;
 
                         case ZkCommand.OptionsRrq:
@@ -290,19 +328,19 @@ public sealed class HardwareHandshakeTests
                                 "MAC" => "00:11:22:33:44:55",
                                 _ => string.Empty
                             };
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId,
-                                System.Text.Encoding.ASCII.GetBytes(option + "=" + value + "\0")).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId,
+                                System.Text.Encoding.ASCII.GetBytes(option + "=" + value + "\0"));
                             break;
 
                         case ZkCommand.GetVersion:
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId,
-                                System.Text.Encoding.ASCII.GetBytes("6.60.0-fake\0")).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId,
+                                System.Text.Encoding.ASCII.GetBytes("6.60.0-fake\0"));
                             break;
 
                         case ZkCommand.GetTime:
                             var time = new byte[4];
                             ZkPacket.WriteUInt32(time, 0, ZkPacket.EncodeTime(DateTime.Now));
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId, time).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId, time);
                             break;
 
                         case ZkCommand.GetFreeSizes:
@@ -312,44 +350,47 @@ public sealed class HardwareHandshakeTests
                             ZkPacket.WriteInt32(sizes, 32, 420);
                             ZkPacket.WriteInt32(sizes, 60, 1000);
                             ZkPacket.WriteInt32(sizes, 64, 2000);
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId, sizes).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId, sizes);
                             break;
 
                         case ZkCommand.Exit:
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId);
                             return;
 
                         default:
-                            await ReplyAsync(stream, ZkCommand.AckOk, session, replyId).ConfigureAwait(false);
+                            Reply(stream, ZkCommand.AckOk, session, replyId);
                             break;
                     }
                 }
             }
-            catch (Exception ex) when (ex is ZkException or IOException or ObjectDisposedException)
+            catch (Exception ex) when (ex is ZkException or IOException or ObjectDisposedException or SocketException)
             {
                 // Client disconnected.
             }
         }
 
-        private static async Task ReplyAsync(Stream stream, ushort code, ushort session, ushort replyId, byte[]? payload = null)
+        private static void Reply(Stream stream, ushort code, ushort session, ushort replyId, byte[]? payload = null)
         {
             var packet = ZkPacket.Build(code, session, replyId, payload ?? []);
-            await stream.WriteAsync(ZkPacket.FrameTcp(packet)).ConfigureAwait(false);
-            await stream.FlushAsync().ConfigureAwait(false);
+            stream.Write(ZkPacket.FrameTcp(packet));
+            stream.Flush();
         }
 
         public void Dispose()
         {
             _cts.Cancel();
             _listener.Stop();
-            try
+            lock (_clientsLock)
             {
-                _loop.Wait(TimeSpan.FromSeconds(2));
-            }
-            catch (AggregateException)
-            {
+                foreach (var client in _clients)
+                {
+                    client.Dispose();
+                }
+
+                _clients.Clear();
             }
 
+            _acceptThread.Join(TimeSpan.FromSeconds(2));
             _cts.Dispose();
         }
     }

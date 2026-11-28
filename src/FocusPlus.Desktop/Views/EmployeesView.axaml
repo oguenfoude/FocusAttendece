@@ -5,7 +5,7 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
       <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
-        <Grid ColumnDefinitions="*,Auto">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
             <TextBox x:Name="SearchBox" Width="240" Text="{Binding Search}" />
             <TextBlock Text="{Binding CountText}" Classes="subtle" VerticalAlignment="Center" />
@@ -20,56 +20,82 @@
       </Border>
 
       <CheckBox Grid.Row="1" x:Name="ArchivedCheck" IsChecked="{Binding ShowArchived}"
-                Margin="4,0,0,10" />
+                Margin="4,10" />
 
       <Border Grid.Row="2" Classes="card">
-        <ListBox ItemsSource="{Binding Employees}" SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
-                 Background="Transparent" BorderThickness="0">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Grid ColumnDefinitions="2*,1.2*,1*,1*,Auto" Margin="0,7">
-                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Department}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding Shift}" Classes="subtle" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="{Binding Pin}" Classes="subtle" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="{Binding StatusText}" VerticalAlignment="Center" Margin="8,0" />
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid>
+          <ListBox x:Name="EmployeeList" ItemsSource="{Binding Employees}"
+                   SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
+                   SelectionChanged="EmployeeList_SelectionChanged"
+                   Background="Transparent" BorderThickness="0">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="2*,1.2*,1*,1*,Auto" ColumnSpacing="8" Margin="0,7">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="1" Text="{Binding Department}" VerticalAlignment="Center"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="2" Text="{Binding Shift}" Classes="subtle" VerticalAlignment="Center"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="3" Text="{Binding Pin}" Classes="subtle technical"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="4" Text="{Binding StatusText}" VerticalAlignment="Center" Margin="8,0" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <StackPanel x:Name="EmptyPanel" IsVisible="False" Spacing="10" MaxWidth="380"
+                      HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock x:Name="EmptyTitle" Classes="state-title" />
+            <TextBlock x:Name="EmptyHint" Classes="state-hint" />
+            <Button x:Name="EmptyAction" Classes="primary" Command="{Binding NewCommand}"
+                    HorizontalAlignment="Center" />
+          </StackPanel>
+
+          <Border x:Name="LoadingPanel" IsVisible="False" Background="{DynamicResource SurfaceBrush}">
+            <StackPanel Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <ProgressBar IsIndeterminate="True" Width="180" />
+              <TextBlock x:Name="LoadingText" Classes="state-hint" />
+            </StackPanel>
+          </Border>
+        </Grid>
       </Border>
     </Grid>
 
-    <Border Classes="card" IsVisible="{Binding IsDrawerOpen}" Width="480"
-            HorizontalAlignment="Right" VerticalAlignment="Stretch" ZIndex="10">
+    <!-- In-page drawer: right in French LTR, left in Arabic RTL (set from code-behind) -->
+    <Border x:Name="Drawer" Classes="drawer" IsVisible="{Binding IsDrawerOpen}" Width="480"
+            HorizontalAlignment="Right">
       <ScrollViewer>
-        <StackPanel Spacing="10">
+        <StackPanel Spacing="10" KeyboardNavigation.TabNavigation="Cycle">
           <TextBlock Text="{Binding DrawerTitle}" Classes="section-title" />
-          <TextBlock Text="{Binding EditingSubtitle}" Classes="subtle" />
+          <TextBlock Text="{Binding EditingSubtitle}" Classes="subtle technical" />
 
           <TextBlock x:Name="ArNameLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding Editing.DisplayNameAr}" />
+          <TextBox x:Name="ArNameBox" Text="{Binding Editing.DisplayNameAr}" />
           <TextBlock x:Name="FrNameLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding Editing.DisplayNameFr}" />
+          <TextBox x:Name="FrNameBox" Text="{Binding Editing.DisplayNameFr}" />
           <TextBlock x:Name="MatriculeLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding Editing.Matricule}" IsEnabled="{Binding CanEditMatricule}" />
+          <TextBox x:Name="MatriculeBox" Text="{Binding Editing.Matricule}"
+                   IsEnabled="{Binding CanEditMatricule}" Classes="technical" />
           <TextBlock x:Name="PinLabel" Classes="kpi-label" />
-          <TextBox Text="{Binding Editing.DevicePin}" />
+          <TextBox x:Name="PinBox" Text="{Binding Editing.DevicePin}" Classes="technical" />
 
           <TextBlock x:Name="DaysLabel" Classes="kpi-label" Margin="0,8,0,0" />
           <WrapPanel>
-            <CheckBox Content="Sun" IsChecked="{Binding Sun}" Margin="0,0,12,0" />
-            <CheckBox Content="Mon" IsChecked="{Binding Mon}" Margin="0,0,12,0" />
-            <CheckBox Content="Tue" IsChecked="{Binding Tue}" Margin="0,0,12,0" />
-            <CheckBox Content="Wed" IsChecked="{Binding Wed}" Margin="0,0,12,0" />
-            <CheckBox Content="Thu" IsChecked="{Binding Thu}" Margin="0,0,12,0" />
-            <CheckBox Content="Fri" IsChecked="{Binding Fri}" Margin="0,0,12,0" />
-            <CheckBox Content="Sat" IsChecked="{Binding Sat}" />
+            <CheckBox x:Name="SunCheck" IsChecked="{Binding Sun}" Margin="0,0,12,0" />
+            <CheckBox x:Name="MonCheck" IsChecked="{Binding Mon}" Margin="0,0,12,0" />
+            <CheckBox x:Name="TueCheck" IsChecked="{Binding Tue}" Margin="0,0,12,0" />
+            <CheckBox x:Name="WedCheck" IsChecked="{Binding Wed}" Margin="0,0,12,0" />
+            <CheckBox x:Name="ThuCheck" IsChecked="{Binding Thu}" Margin="0,0,12,0" />
+            <CheckBox x:Name="FriCheck" IsChecked="{Binding Fri}" Margin="0,0,12,0" />
+            <CheckBox x:Name="SatCheck" IsChecked="{Binding Sat}" />
           </WrapPanel>
 
           <WrapPanel>
             <Button x:Name="SaveButton" Classes="primary" Command="{Binding SaveCommand}" Margin="0,8,8,0" />
             <Button x:Name="ArchiveButton" Classes="ghost" Command="{Binding ArchiveCommand}" Margin="0,8,8,0" />
+            <Button x:Name="RestoreButton" Classes="ghost" Command="{Binding RestoreCommand}" Margin="0,8,8,0" />
             <Button x:Name="CloseButton" Classes="ghost" Command="{Binding CloseDrawerCommand}" Margin="0,8,8,0" />
           </WrapPanel>
         </StackPanel>

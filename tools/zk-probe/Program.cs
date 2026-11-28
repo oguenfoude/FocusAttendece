@@ -91,15 +91,40 @@ Console.WriteLine($"Target      : {target}:{port}");
 Console.WriteLine($"CommKey     : {key}");
 Console.WriteLine();
 
+// Field terminals intermittently drop the first TCP session. Retry a few times with a
+// short pause; any non-Unreachable status is already proof the endpoint is alive.
 var device = await hardware.ProbeAsync(target, port, key);
-Console.WriteLine($"Discovery   : {device.HandshakeText}");
+for (var attempt = 2; attempt <= 4 && device.Status == DiscoveryStatus.Unreachable; attempt++)
+{
+    Console.WriteLine($"Attempt {attempt - 1} unreachable — retrying in 400 ms …");
+    await Task.Delay(TimeSpan.FromMilliseconds(400));
+    device = await hardware.ProbeAsync(target, port, key);
+}
+
+IReadOnlyList<string> dumpLines = mode == "dump"
+    ? await hardware.DumpSdkInfoAsync(new ZkEndpoint(target, port, key))
+    : Array.Empty<string>();
+
+// A successful native dump after failed probes is live device evidence, not a fabricated device.
+// Only identity values actually returned by the terminal can promote the result to verified.
+var dumpVerified = device.Status == DiscoveryStatus.Unreachable && HasDumpIdentity(dumpLines);
+var serial = dumpVerified ? DumpValue(dumpLines, "Serial") : device.SerialNumber;
+var model = dumpVerified ? DumpValue(dumpLines, "Model") : device.DisplayModel;
+var firmware = dumpVerified ? DumpValue(dumpLines, "Firmware") : device.Snapshot?.FirmwareVersion;
+
+Console.WriteLine($"Discovery   : {(dumpVerified
+    ? "Verified ZKTeco — device identity recovered by DumpSdkInfoAsync (probe reported Unreachable)"
+    : device.HandshakeText)}");
 Console.WriteLine($"Port open   : {device.PortOpen}");
 Console.WriteLine($"Transport   : {device.Transport}");
-Console.WriteLine($"Serial      : {device.SerialNumber ?? "-"}");
-Console.WriteLine($"Model       : {device.DisplayModel ?? "-"}");
+Console.WriteLine($"Serial      : {serial ?? "-"}");
+Console.WriteLine($"Model       : {model ?? "-"}");
+if (firmware is not null || device.Snapshot is not null)
+{
+    Console.WriteLine($"Firmware    : {firmware ?? "-"}");
+}
 if (device.Snapshot is { } s)
 {
-    Console.WriteLine($"Firmware    : {s.FirmwareVersion ?? "-"}");
     Console.WriteLine($"MAC         : {s.MacAddress ?? "-"}");
     Console.WriteLine($"Platform    : {s.Platform ?? "-"}");
     Console.WriteLine($"Clock       : {s.DeviceClock:O}");
@@ -114,8 +139,36 @@ if (mode == "dump")
 {
     Console.WriteLine();
     Console.WriteLine("Device diagnostics:");
-    foreach (var line in await hardware.DumpSdkInfoAsync(new ZkEndpoint(target, port, key)))
+    foreach (var line in dumpLines)
     {
         Console.WriteLine($"  {line}");
     }
 }
+
+Environment.ExitCode = device.Status == DiscoveryStatus.Unreachable && !dumpVerified ? 1 : 0;
+
+static string? DumpValue(IReadOnlyList<string> lines, string key)
+{
+    foreach (var line in lines)
+    {
+        var separator = line.IndexOf('=');
+        if (separator < 0 || !line[..separator].Trim().Equals(key, StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        var value = line[(separator + 1)..].Trim();
+        return string.IsNullOrWhiteSpace(value)
+            || value == "-"
+            || value.Equals("unknown", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : value;
+    }
+
+    return null;
+}
+
+static bool HasDumpIdentity(IReadOnlyList<string> lines) =>
+    DumpValue(lines, "Serial") is not null
+    || DumpValue(lines, "Model") is not null
+    || DumpValue(lines, "Firmware") is not null;

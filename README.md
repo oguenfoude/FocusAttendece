@@ -101,5 +101,6 @@ the app shows a clear `Locked — needs device password` state instead of a raw 
 - Fresh database contains **0 employees, 0 devices, 0 punches**; only the OPGI baseline is seeded.
 - No hard delete: every mutable table has archive columns + restore.
 - Punches are deduplicated on `serial + pin + time`; re-pulling never duplicates.
-- Rolling SQLite backups (`VACUUM INTO`) with startup and pre-restore safety copies.
+- Metadata-stamped SQLite backups (`VACUUM INTO`): one daily copy per day, newest 30 daily
+  copies plus 12 monthly anchors retained, older payloads deleted; startup and pre-restore safety copies.
 - Full audit trail (logins, device changes, HR adjustments, hardware operations).

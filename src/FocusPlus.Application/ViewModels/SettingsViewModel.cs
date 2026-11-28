@@ -64,18 +64,51 @@ public sealed class DepartmentRowVm
 
 public sealed class BackupRowVm
 {
-    public BackupRowVm(BackupFileInfo file)
+    private static readonly TimeZoneInfo Algiers = ResolveAlgiers();
+
+    public BackupRowVm(BackupRecord record, bool arabic)
     {
-        File = file;
-        CreatedText = DateTime.SpecifyKind(file.CreatedUtc, DateTimeKind.Utc).ToLocalTime().ToString("dd/MM/yyyy HH:mm");
-        SizeText = $"{file.SizeMb:0.00} MB";
+        Record = record;
+        CreatedText = ToLocal(record.CreatedUtc).ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+        SizeText = $"{Math.Round(record.SizeBytes / 1024d / 1024d, 2):0.00} MB";
+        StatusText = record.Status switch
+        {
+            BackupStatus.Present => arabic ? "سليمة" : "Présente",
+            BackupStatus.Pruned => arabic ? "محذوفة بعد الاحتفاظ" : "Élaguée",
+            BackupStatus.Failed => arabic ? "فاشلة" : "Échec",
+            _ => arabic ? "مفقودة" : "Absente"
+        };
     }
 
-    public BackupFileInfo File { get; }
-    public string Name => File.FileName;
+    public BackupRecord Record { get; }
+    public string Name => Record.FileName;
     public string CreatedText { get; }
     public string SizeText { get; }
-    public string Path => File.Path;
+    public string StatusText { get; }
+    public string Path => Record.FullPath;
+    public bool CanRestore => Record.Status == BackupStatus.Present;
+
+    /// <summary>UTC metadata rendered in Africa/Algiers, matching the stored LocalDate.</summary>
+    public static DateTime ToLocal(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Algiers);
+
+    private static TimeZoneInfo ResolveAlgiers()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Africa/Algiers");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            // Algeria has no DST since 1981; the fixed offset keeps the display consistent.
+        }
+        catch (InvalidTimeZoneException)
+        {
+            // Same: an unusable tz entry must not break the settings screen.
+        }
+
+        return TimeZoneInfo.CreateCustomTimeZone("Africa/Algiers", TimeSpan.FromHours(1), "Africa/Algiers", "Africa/Algiers");
+    }
 }
 
 public sealed class OperatorRowVm
@@ -131,8 +164,11 @@ public sealed class SettingsViewModel : ObservableObject
     private string _branchAddress = string.Empty;
     private string _branchCity = string.Empty;
     private string _branchPhone = string.Empty;
-    private string _todayBackupsText = string.Empty;
+    private string _backupPolicyText = string.Empty;
     private string _latestBackupText = string.Empty;
+    private string _backupDailyTimeText = "20:00";
+    private string _backupKeepDaysText = "30";
+    private string _backupKeepMonthlyText = "12";
 
     public SettingsViewModel(AppHost host, IUiMessenger ui)
     {
@@ -146,7 +182,7 @@ public sealed class SettingsViewModel : ObservableObject
         SelectFrenchCommand = new RelayCommand(() => SetLanguage(false));
         ToggleThemeCommand = new RelayCommand(ToggleTheme);
         BackupNowCommand = new AsyncRelayCommand(BackupNowAsync, () => !IsBusy);
-        RestoreBackupCommand = new AsyncRelayCommand(RestoreSelectedBackupAsync, () => !IsBusy && SelectedBackup is not null);
+        RestoreBackupCommand = new AsyncRelayCommand(RestoreSelectedBackupAsync, () => !IsBusy && SelectedBackup is { CanRestore: true });
         OpenBackupFolderCommand = new RelayCommand(() => OpenFolderRequested?.Invoke(_host.Db.BackupDirectory));
 
         NewRuleCommand = new RelayCommand(NewRule);
@@ -168,6 +204,7 @@ public sealed class SettingsViewModel : ObservableObject
         ChangePasswordCommand = new AsyncRelayCommand(ChangePasswordAsync, () => !IsBusy);
         SavePreferencesCommand = new AsyncRelayCommand(SavePreferencesAsync, () => !IsBusy);
         SaveBrandingCommand = new AsyncRelayCommand(SaveBrandingAsync, () => !IsBusy);
+        SaveBackupPolicyCommand = new AsyncRelayCommand(SaveBackupPolicyAsync, () => !IsBusy);
     }
 
     public string BrandCompany => _brandCompany;
@@ -187,11 +224,32 @@ public sealed class SettingsViewModel : ObservableObject
 
     public string BranchPhone { get => _branchPhone; set => SetProperty(ref _branchPhone, value); }
 
-    public string TodayBackupsText { get => _todayBackupsText; private set => SetProperty(ref _todayBackupsText, value); }
+    public string BackupPolicyText
+    {
+        get => _backupPolicyText;
+        private set
+        {
+            if (SetProperty(ref _backupPolicyText, value))
+            {
+                OnPropertyChanged(nameof(TodayBackupsText));
+            }
+        }
+    }
+
+    /// <summary>Legacy property name kept for the existing view; same 30-day policy text.</summary>
+    public string TodayBackupsText => BackupPolicyText;
 
     public string LatestBackupText { get => _latestBackupText; private set => SetProperty(ref _latestBackupText, value); }
 
+    public string BackupDailyTimeText { get => _backupDailyTimeText; set => SetProperty(ref _backupDailyTimeText, value); }
+
+    public string BackupKeepDaysText { get => _backupKeepDaysText; set => SetProperty(ref _backupKeepDaysText, value); }
+
+    public string BackupKeepMonthlyText { get => _backupKeepMonthlyText; set => SetProperty(ref _backupKeepMonthlyText, value); }
+
     public AsyncRelayCommand SaveBrandingCommand { get; }
+
+    public AsyncRelayCommand SaveBackupPolicyCommand { get; }
 
     public ObservableCollection<WorkRuleRowVm> Rules { get; } = [];
 
@@ -260,6 +318,7 @@ public sealed class SettingsViewModel : ObservableObject
                 SaveDepartmentCommand.RaiseCanExecuteChanged();
                 CreateOperatorCommand.RaiseCanExecuteChanged();
                 ChangePasswordCommand.RaiseCanExecuteChanged();
+                SaveBackupPolicyCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -397,10 +456,27 @@ public sealed class SettingsViewModel : ObservableObject
             }
 
             Backups.Clear();
-            foreach (var backup in _host.Settings.ListBackups())
+            var backupRecords = _host.Settings.ListBackups();
+            foreach (var backup in backupRecords)
             {
-                Backups.Add(new BackupRowVm(backup));
+                Backups.Add(new BackupRowVm(backup, arabic));
             }
+
+            var keepDays = _host.Settings.GetBackupKeepDays();
+            var keepMonthly = _host.Settings.GetBackupKeepMonthly();
+            var dailyTime = _host.Settings.GetDailyBackupTime();
+            BackupDailyTimeText = dailyTime.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
+            BackupKeepDaysText = keepDays.ToString(CultureInfo.InvariantCulture);
+            BackupKeepMonthlyText = keepMonthly.ToString(CultureInfo.InvariantCulture);
+            var policy = arabic
+                ? $"نسخة يومية {dailyTime:hh\\:mm} • الاحتفاظ {keepDays} يومًا + {keepMonthly} شهرًا"
+                : $"Quotidienne {dailyTime:hh\\:mm} • conservation {keepDays} j + {keepMonthly} mois";
+            BackupPolicyText = policy;
+
+            var latestDaily = backupRecords.FirstOrDefault(b => b.Kind == BackupKind.Daily && b.Status == BackupStatus.Present);
+            LatestBackupText = latestDaily is null
+                ? (arabic ? $"لا توجد نسخة حديثة • {policy}" : $"Aucune sauvegarde récente • {policy}")
+                : $"{(arabic ? "آخر نسخة" : "Dernière")} {BackupRowVm.ToLocal(latestDaily.CreatedUtc):dd/MM/yyyy HH:mm} • {policy}";
 
             Operators.Clear();
             foreach (var user in _host.Settings.GetOperators())
@@ -419,11 +495,6 @@ public sealed class SettingsViewModel : ObservableObject
             BranchCity = _host.Settings.Get("brand.city", "M'Sila / المسيلة");
             BranchPhone = _host.Settings.Get("brand.phone", string.Empty);
 
-            var today = _host.Backups.GetBackupsForDate(DateTime.Today);
-            TodayBackupsText = $"{today.Count} / {BackupService.SlotsPerDay}";
-            LatestBackupText = today.Count == 0
-                ? "—"
-                : today.OrderByDescending(b => b.CreatedUtc).First().CreatedUtc.ToLocalTime().ToString("HH:mm:ss");
         }
         catch (Exception ex)
         {
@@ -465,6 +536,68 @@ public sealed class SettingsViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    private async Task SaveBackupPolicyAsync()
+    {
+        if (!TryParseDailyTime(BackupDailyTimeText, out var dailyTime))
+        {
+            _ui.Notify(
+                IsArabic ? "أدخل وقتًا صحيحًا للنسخة اليومية بصيغة HH:MM." : "Saisissez une heure valide (HH:MM) pour la sauvegarde quotidienne.",
+                UiSeverity.Error);
+            return;
+        }
+
+        if (!int.TryParse(BackupKeepDaysText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keepDays)
+            || keepDays is < 1 or > 3650)
+        {
+            _ui.Notify(
+                IsArabic ? "عدد أيام الاحتفاظ يجب أن يكون بين 1 و3650." : "La conservation en jours doit être comprise entre 1 et 3650.",
+                UiSeverity.Error);
+            return;
+        }
+
+        if (!int.TryParse(BackupKeepMonthlyText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keepMonthly)
+            || keepMonthly is < 0 or > 120)
+        {
+            _ui.Notify(
+                IsArabic ? "عدد أشهر الاحتفاظ يجب أن يكون بين 0 و120." : "La conservation en mois doit être comprise entre 0 et 120.",
+                UiSeverity.Error);
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            _host.Settings.SetBackupPolicy(keepDays, keepMonthly, dailyTime, _host.Session.Actor);
+            _host.BackupScheduler.DailyTime = dailyTime;
+            _host.BackupScheduler.KeepDays = keepDays;
+            _host.BackupScheduler.KeepMonthly = keepMonthly;
+
+            _ui.Notify(
+                IsArabic ? "تم حفظ سياسة النسخ الاحتياطي." : "Politique de sauvegarde enregistrée.",
+                UiSeverity.Success);
+            await RefreshAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _host.Logger.Error("Backup policy save failed.", ex);
+            _ui.Notify(
+                IsArabic ? "تعذر حفظ سياسة النسخ الاحتياطي." : "La politique de sauvegarde n'a pas pu être enregistrée.",
+                UiSeverity.Error);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private static bool TryParseDailyTime(string value, out TimeSpan time)
+    {
+        var text = value?.Trim() ?? string.Empty;
+        return TimeSpan.TryParseExact(text, [@"h\:mm", @"hh\:mm"], CultureInfo.InvariantCulture, out time)
+            && time >= TimeSpan.Zero
+            && time < TimeSpan.FromDays(1);
     }
 
     private async Task SaveBrandingAsync()
@@ -510,16 +643,23 @@ public sealed class SettingsViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var backup = await Task.Run(() => _host.Settings.CreateBackup(_host.Session.Actor)).ConfigureAwait(true);
+            var result = await Task.Run(() => _host.Settings.CreateBackup(_host.Session.Actor)).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                _host.Logger.Error($"Backup failed: {result.ErrorCode} {result.ErrorMessage}");
+                _ui.Notify(BackupErrorText(result.ErrorCode, IsArabic), UiSeverity.Error);
+                return;
+            }
+
             _ui.Notify(
-                IsArabic ? $"تم إنشاء نسخة احتياطية: {backup.FileName}" : $"Sauvegarde créée : {backup.FileName}",
+                IsArabic ? $"تم إنشاء نسخة احتياطية: {result.FileName}" : $"Sauvegarde créée : {result.FileName}",
                 UiSeverity.Success);
             await RefreshAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             _host.Logger.Error("Backup failed.", ex);
-            _ui.Notify(Labels.Error(null, IsArabic, ex.Message), UiSeverity.Error);
+            _ui.Notify(Labels.Error(null, IsArabic), UiSeverity.Error);
         }
         finally
         {
@@ -530,7 +670,7 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Restores the selected backup (the UI asks for confirmation first).</summary>
     public async Task RestoreSelectedBackupAsync()
     {
-        if (SelectedBackup is null)
+        if (SelectedBackup is null || !SelectedBackup.CanRestore)
         {
             return;
         }
@@ -538,11 +678,20 @@ public sealed class SettingsViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var safety = await Task.Run(() => _host.Settings.RestoreBackup(SelectedBackup.Path, _host.Session.Actor)).ConfigureAwait(true);
+            var result = await Task.Run(() => _host.Settings.RestoreBackup(SelectedBackup.Path, _host.Session.Actor)).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                _host.Logger.Error($"Restore failed: {result.ErrorCode} {result.ErrorMessage}");
+                _ui.Notify(RestoreErrorText(result, IsArabic),
+                    result.ErrorCode == "restore.rollback-completed" ? UiSeverity.Warning : UiSeverity.Error);
+                return;
+            }
+
+            var safetyName = Path.GetFileName(result.SafetyBackupPath ?? string.Empty);
             _ui.Notify(
                 IsArabic
-                    ? $"تمت الاستعادة. نسخة أمان: {safety.FileName}. يُنصح بإعادة التشغيل."
-                    : $"Restauration effectuée. Sauvegarde de sécurité : {safety.FileName}. Redémarrage conseillé.",
+                    ? $"تمت الاستعادة. نسخة أمان: {safetyName}. يُنصح بإعادة التشغيل."
+                    : $"Restauration effectuée. Sauvegarde de sécurité : {safetyName}. Redémarrage conseillé.",
                 UiSeverity.Warning);
             await RefreshAsync().ConfigureAwait(true);
             DataChanged?.Invoke();
@@ -550,13 +699,43 @@ public sealed class SettingsViewModel : ObservableObject
         catch (Exception ex)
         {
             _host.Logger.Error("Restore failed.", ex);
-            _ui.Notify(Labels.Error(null, IsArabic, ex.Message), UiSeverity.Error);
+            _ui.Notify(Labels.Error(null, IsArabic), UiSeverity.Error);
         }
         finally
         {
             IsBusy = false;
         }
     }
+
+    private static string BackupErrorText(string? code, bool arabic) => code switch
+    {
+        "backup.database-empty" => arabic ? "قاعدة البيانات فارغة: لم تُنشأ أي نسخة." : "Base de données vide : aucune copie créée.",
+        "backup.disk-full" => arabic ? "المساحة الحرة غير كافية لإنشاء النسخة." : "Espace disque insuffisant pour la sauvegarde.",
+        "backup.access-denied" => arabic ? "لا يمكن الكتابة في مجلد النسخ الاحتياطية." : "Le dossier de sauvegarde est en lecture seule.",
+        "backup.metadata-write-failed" => arabic ? "تم إنشاء الملف لكن تعذر تسجيل بياناته الوصفية." : "Le fichier est créé mais ses métadonnées n'ont pas pu être enregistrées.",
+        _ => arabic ? "تعذر إنشاء النسخة الاحتياطية." : "La sauvegarde a échoué."
+    };
+
+    private static string RestoreErrorText(RestoreResult result, bool arabic) => result.ErrorCode switch
+    {
+        "restore.rollback-completed" => arabic
+            ? "فشل الملف المستعاد بعد الاستبدال، وتمت استعادة نسخة الأمان. قاعدة البيانات سليمة."
+            : "Le fichier restauré a échoué après remplacement ; la copie de sécurité a été remise en place.",
+        "restore.rollback-failed" => arabic
+            ? "فشلت الاستعادة وفشلت إعادة التراجع. استخدم نسخة الأمان الموجودة في مجلد النسخ."
+            : "La restauration et le retour arrière ont échoué. Utilisez la copie de sécurité du dossier.",
+        "restore.hash-mismatch" => arabic
+            ? "الملف المحدد لا يطابق البصمة المسجلة عند إنشائه."
+            : "Le fichier sélectionné ne correspond pas à l'empreinte enregistrée.",
+        "restore.integrity-check-failed" => arabic
+            ? "الملف المحدد تالف ولم يتم المساس بقاعدة البيانات الحالية."
+            : "Le fichier est corrompu ; la base de données actuelle n'a pas été modifiée.",
+        "restore.safety-failed" => arabic
+            ? "تعذر إنشاء نسخة الأمان، لذلك أُلغيت الاستعادة."
+            : "La copie de sécurité a échoué, la restauration a été annulée.",
+        "restore.source-missing" => arabic ? "ملف النسخة غير موجود." : "Le fichier de sauvegarde n'existe pas.",
+        _ => arabic ? "تعذرت الاستعادة." : "La restauration a échoué."
+    };
 
     private void NewRule()
     {
