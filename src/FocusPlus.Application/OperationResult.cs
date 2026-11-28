@@ -28,6 +28,7 @@ public static class ErrorCodes
     public const string LastDefaultRule = "error.lastDefaultRule";
     public const string InUse = "error.inUse";
     public const string InvalidRange = "error.invalidRange";
+    public const string ApprovalRequired = "approval.required";
 }
 
 public enum UiSeverity

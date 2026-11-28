@@ -139,6 +139,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private bool _isArabic;
     private bool _isDark;
+    private bool _isAutoApprove;
     private bool _isBusy;
     private string _dbPath = string.Empty;
     private string _dbSize = string.Empty;
@@ -176,6 +177,7 @@ public sealed class SettingsViewModel : ObservableObject
         _ui = ui;
         _isArabic = host.Session.IsArabic;
         _isDark = string.Equals(host.Settings.GetTheme(), "Dark", StringComparison.OrdinalIgnoreCase);
+        _isAutoApprove = host.Settings.GetAutoApprove();
 
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
         SelectArabicCommand = new RelayCommand(() => SetLanguage(true));
@@ -303,6 +305,19 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _isDark;
         private set => SetProperty(ref _isDark, value);
+    }
+
+    /// <summary>Auto-approval of routine attendance adjustments; persisted on change only.</summary>
+    public bool IsAutoApprove
+    {
+        get => _isAutoApprove;
+        set
+        {
+            if (SetProperty(ref _isAutoApprove, value))
+            {
+                _host.Settings.SetAutoApprove(value, _host.Session.Actor);
+            }
+        }
     }
 
     public bool IsBusy

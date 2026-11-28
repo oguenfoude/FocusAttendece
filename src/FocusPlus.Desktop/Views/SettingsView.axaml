@@ -29,6 +29,14 @@
             <Button x:Name="FrenchButton" Classes="ghost" Command="{Binding SelectFrenchCommand}" Margin="0,8,8,0" />
             <Button x:Name="ThemeButton" Classes="ghost" Command="{Binding ToggleThemeCommand}" Margin="0,8,8,0" />
           </WrapPanel>
+
+          <!-- Approval policy: one switch, applied to every routine adjustment kind. -->
+          <Border Classes="soft" Margin="0,8,0,0">
+            <StackPanel Spacing="4">
+              <CheckBox x:Name="AutoApproveCheck" IsChecked="{Binding IsAutoApprove, Mode=TwoWay}" />
+              <TextBlock x:Name="AutoApproveHint" Classes="subtle" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Border>
 

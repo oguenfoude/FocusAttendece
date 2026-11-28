@@ -74,6 +74,10 @@ dotnet run --project src/FocusPlus.Desktop -c Release
 Five workspaces: **Dashboard**, **Terminals**, **Employees**, **Attendance**, **Settings**.
 Login gate with PBKDF2 auth; live Arabic (RTL) / French (LTR) switch; OPGI emerald/ochre
 design system; all editing happens in a single in-page drawer — no nested tabs or popups.
+
+**Auto approve permissions** (Settings → General) is ON by default: exit permits, missions,
+leave and verified manual punches are accepted immediately with an audit record. When OFF,
+only a SuperAdmin can add them; Operators get a localized `approval.required` error and no row is written.
 On a headless Linux machine: `xvfb-run -a dotnet src/FocusPlus.Desktop/bin/Release/net10.0/FocusPlus.dll`.
 
 ## Projects

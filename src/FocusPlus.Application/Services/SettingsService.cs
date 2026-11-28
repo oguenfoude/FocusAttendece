@@ -20,6 +20,18 @@ public sealed class SettingsService(
     public const string BackupKeepDaysKey = "Backup.KeepDays";
     public const string BackupKeepMonthlyKey = "Backup.KeepMonthly";
     public const string BackupDailyTimeKey = "Backup.DailyTime";
+    public const string AutoApproveKey = "Approval.AutoApprove";
+
+    /// <summary>Routine attendance approvals are automatic until an administrator disables it.</summary>
+    public bool GetAutoApprove() =>
+        !bool.TryParse(settings.Get(AutoApproveKey), out var value) || value;
+
+    public void SetAutoApprove(bool value, string actor)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(actor);
+        settings.Set(AutoApproveKey, value ? "true" : "false");
+        audit.Add(Log($"settings.set.{AutoApproveKey}", actor, value ? "true" : "false"));
+    }
 
     public string GetLanguage() => settings.Get(LanguageKey) ?? "ar";
 

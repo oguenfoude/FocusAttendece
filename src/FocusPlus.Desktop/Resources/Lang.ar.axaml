@@ -67,6 +67,8 @@
   <sys:String x:Key="Hours">الساعات</sys:String>
   <sys:String x:Key="General">عام</sys:String>
   <sys:String x:Key="Security">الأمان</sys:String>
+  <sys:String x:Key="AutoApprove">الموافقة التلقائية على الأذونات</sys:String>
+  <sys:String x:Key="AutoApproveHint">عند التفعيل تُعتمد فورًا رخص الخروج الروتينية وأوامر المهمة والعطل والبصمات اليدوية.</sys:String>
   <sys:String x:Key="Database">قاعدة البيانات</sys:String>
   <sys:String x:Key="About">حول</sys:String>
   <sys:String x:Key="History">السجل</sys:String>

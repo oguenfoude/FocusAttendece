@@ -32,6 +32,8 @@ public partial class SettingsView : UserControl
         Set("ServicesTitle", "Services");
         Set("BackupTitle", "Backup");
         Set("OperatorsTitle", "Operators");
+        Set("AutoApproveCheck", "AutoApprove");
+        Set("AutoApproveHint", "AutoApproveHint");
         Set("ArabicButton", "العربية");
         Set("FrenchButton", "Français");
         Set("ThemeButton", "Theme");
@@ -64,6 +66,13 @@ public partial class SettingsView : UserControl
         if (label is not null)
         {
             label.Text = Lang.Get(text);
+            return;
+        }
+
+        var check = this.FindControl<CheckBox>(control);
+        if (check is not null)
+        {
+            check.Content = Lang.Get(text);
             return;
         }
 

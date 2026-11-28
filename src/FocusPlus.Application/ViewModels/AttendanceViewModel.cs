@@ -499,7 +499,7 @@ public sealed class AttendanceViewModel : ObservableObject
         IsDetailOpen = true;
     }
 
-    private async Task AddManualPunchAsync()
+    internal async Task AddManualPunchAsync()
     {
         if (SelectedRow is null)
         {
@@ -512,10 +512,21 @@ public sealed class AttendanceViewModel : ObservableObject
             return;
         }
 
+        if (!TryResolveApproval("ManualPunch", out var autoApproved))
+        {
+            return;
+        }
+
         IsBusy = true;
         try
         {
-            var result = _host.Attendance.AddManualPunch(SelectedRow.Employee.Id, SelectedRow.Date, time, ManualNote, _host.Session.Actor);
+            var result = _host.Attendance.AddManualPunch(
+                SelectedRow.Employee.Id,
+                SelectedRow.Date,
+                time,
+                ManualNote,
+                _host.Session.Actor,
+                autoApproved);
             if (!result.Success)
             {
                 _ui.Notify(Labels.Error(result.ErrorCode, IsArabic, result.Detail), UiSeverity.Error);
@@ -533,9 +544,14 @@ public sealed class AttendanceViewModel : ObservableObject
         }
     }
 
-    private async Task AddExceptionAsync()
+    internal async Task AddExceptionAsync()
     {
         if (SelectedRow is null || SelectedExceptionKind is null)
+        {
+            return;
+        }
+
+        if (!TryResolveApproval(SelectedExceptionKind.Kind.ToString(), out var autoApproved))
         {
             return;
         }
@@ -564,7 +580,8 @@ public sealed class AttendanceViewModel : ObservableObject
                 ExceptionMinutes,
                 ExceptionReference,
                 ExceptionNote,
-                _host.Session.Actor);
+                _host.Session.Actor,
+                autoApproved);
 
             if (!result.Success)
             {
@@ -628,4 +645,34 @@ public sealed class AttendanceViewModel : ObservableObject
     }
 
     private static string Format(DateTime? value) => value?.ToString("HH:mm") ?? "—";
+
+    /// <summary>
+    /// Auto-approval ON accepts routine adjustments immediately. OFF requires an explicit
+    /// SuperAdmin decision; a denied attempt is audited and localised before any write occurs.
+    /// </summary>
+    private bool TryResolveApproval(string kind, out bool autoApproved)
+    {
+        autoApproved = _host.Settings.GetAutoApprove();
+        if (autoApproved)
+        {
+            return true;
+        }
+
+        if (_host.Session.User?.Role == UserRole.SuperAdmin)
+        {
+            return true;
+        }
+
+        var date = SelectedRow?.Date ?? DateTime.Today;
+        _host.Audit.Add(new AuditLogEntry
+        {
+            Action = "approval.required",
+            Actor = _host.Session.Actor,
+            EntityType = "Attendance",
+            EntityId = SelectedRow?.Employee.Id,
+            Details = $"kind={kind}; approval=required; {date:yyyy-MM-dd}; role={_host.Session.User?.Role.ToString() ?? "anonymous"}"
+        });
+        _ui.Notify(Labels.Error(ErrorCodes.ApprovalRequired, IsArabic), UiSeverity.Error);
+        return false;
+    }
 }

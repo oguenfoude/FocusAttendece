@@ -121,6 +121,9 @@ public static class Labels
             ErrorCodes.LastDefaultRule => arabic ? "لا يمكن أرشفة آخر وردية متبقية." : "Impossible d'archiver la dernière règle de travail.",
             ErrorCodes.InUse => arabic ? "لا يمكن الحذف: العنصر مستعمل من طرف موظفين أو مصالح." : "Suppression impossible : élément utilisé par des employés ou services.",
             ErrorCodes.InvalidRange => arabic ? "المدى الزمني غير صالح." : "Plage de dates invalide.",
+            ErrorCodes.ApprovalRequired => arabic
+                ? "الموافقة التلقائية معطلة: هذا الإجراء يتطلب موافقة مدير النظام."
+                : "L'approbation automatique est désactivée : cette action requiert l'approbation du SuperAdmin.",
             _ => arabic ? "حدث خطأ غير متوقع." : "Une erreur inattendue est survenue."
         };
 

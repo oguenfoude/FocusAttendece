@@ -67,6 +67,8 @@
   <sys:String x:Key="Hours">Heures</sys:String>
   <sys:String x:Key="General">Général</sys:String>
   <sys:String x:Key="Security">Sécurité</sys:String>
+  <sys:String x:Key="AutoApprove">Approuver automatiquement les autorisations</sys:String>
+  <sys:String x:Key="AutoApproveHint">Lorsque cette option est activée, les bons de sortie de routine, les ordres de mission, les congés et les pointages manuels sont approuvés immédiatement.</sys:String>
   <sys:String x:Key="Database">Base de données</sys:String>
   <sys:String x:Key="About">À propos</sys:String>
   <sys:String x:Key="History">Historique</sys:String>

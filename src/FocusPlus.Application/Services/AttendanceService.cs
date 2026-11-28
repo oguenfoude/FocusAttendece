@@ -124,7 +124,13 @@ public sealed class AttendanceService(
         return new AttendanceDayDetail(employee, rule, department, result, dayPunches, dayAdjustments);
     }
 
-    public OperationResult AddManualPunch(string employeeId, DateTime date, TimeSpan time, string? note, string actor)
+    public OperationResult AddManualPunch(
+        string employeeId,
+        DateTime date,
+        TimeSpan time,
+        string? note,
+        string actor,
+        bool autoApproved = true)
     {
         if (time < TimeSpan.Zero || time >= TimeSpan.FromDays(1))
         {
@@ -155,7 +161,8 @@ public sealed class AttendanceService(
             CreatedBy = actor
         });
 
-        audit.Add(Log("adjustment.manualpunch", actor, employeeId, $"{date:yyyy-MM-dd} {time:hh\\:mm} {note}"));
+        audit.Add(Log("adjustment.manualpunch", actor, employeeId,
+            $"kind=ManualPunch; approval={ApprovalLabel(autoApproved)}; {date:yyyy-MM-dd} {time:hh\\:mm} {note}"));
         return OperationResult.Ok();
     }
 
@@ -168,7 +175,8 @@ public sealed class AttendanceService(
         int creditedMinutes,
         string? reference,
         string? note,
-        string actor)
+        string actor,
+        bool autoApproved = true)
     {
         if (kind == AdjustmentKind.ManualPunch)
         {
@@ -215,7 +223,8 @@ public sealed class AttendanceService(
             CreatedBy = actor
         });
 
-        audit.Add(Log("adjustment.added", actor, employeeId, $"{kind} {date:yyyy-MM-dd} {minutes}min"));
+        audit.Add(Log("adjustment.added", actor, employeeId,
+            $"kind={kind}; approval={ApprovalLabel(autoApproved)}; {date:yyyy-MM-dd} {minutes}min"));
         return OperationResult.Ok();
     }
 
@@ -399,6 +408,8 @@ public sealed class AttendanceService(
 
     private static string Format(DateTime? value) =>
         value?.ToString("HH:mm", CultureInfo.InvariantCulture) ?? "—";
+
+    private static string ApprovalLabel(bool autoApproved) => autoApproved ? "auto" : "superadmin";
 
     private static string Escape(string value)
     {

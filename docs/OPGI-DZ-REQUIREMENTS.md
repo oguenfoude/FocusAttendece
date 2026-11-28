@@ -94,6 +94,7 @@ Firmware Ver 6.60 Sep 10 2019 · Users 4 · Fingers 2 · Faces 2 · Punches 22
 | Attendance engine + editable shifts | ✅ done (rule editor now in GUI) |
 | 7-day / monthly sheet + details | ✅ done |
 | Manual punch + exceptions | ✅ done |
+| Auto approve permissions (default ON, audited; OFF = SuperAdmin only) | ✅ done |
 | Employee CRUD + device import/push | ✅ done |
 | Device discovery, snapshot, pull, clock sync | ✅ done |
 | AR/FR live switch, OPGI design | ✅ done |
